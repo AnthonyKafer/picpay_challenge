@@ -1,0 +1,45 @@
+﻿name: .NET CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 🧱 1. Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 🛠️ 2. Setup .NET SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'   # or '9.0.x' if you’re using .NET 9
+
+      # 📦 3. Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # 🧪 4. Build the project
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      # 🧫 5. Run tests (optional but recommended)
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+      # 📄 6. Publish build output (optional)
+      - name: Publish
+        run: dotnet publish -c Release -o ./publish
+
+      # ☁️ 7. Upload the published output as an artifact (optional)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app
+          path: ./publish
