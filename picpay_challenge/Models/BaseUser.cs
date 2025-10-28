@@ -1,11 +1,18 @@
+using picpay_challenge.DTOs.UserDTOs;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PicPayChallenge.Models
 {
-    public abstract class BaseUser
+    public class BaseUser
     {
+
         public int Id { get; set; }
+        public enum UserType
+        {
+            User,
+            Storekeeper
+        }
         [Required]
         public string FullName { get; set; } = null!;
         [Required]
@@ -15,12 +22,15 @@ namespace PicPayChallenge.Models
         [Required]
         public string CPF { get; set; } = null!;
         [Required]
-        public DateTime CreateAt { get; set; }
+        public DateTime CreateAt = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
         [Required]
         public bool IsActive { get; set; } = true;
 
         [Column(TypeName = "numeric(18,5)")]
         public decimal Balance { get; set; }
+        public string? CNPJ { get; set; }
+        public string? StoreName { get; set; }
+
     }
 }
