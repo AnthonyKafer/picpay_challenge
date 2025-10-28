@@ -205,3 +205,4 @@ C:\Users\anthony.lbarros.CARDEXPRESS\Downloads\picpay_challenge\picpay_challenge
 C:\Users\anthony.lbarros.CARDEXPRESS\Downloads\picpay_challenge\picpay_challenge\obj\Debug\net8.0\picpay_challenge.pdb
 C:\Users\anthony.lbarros.CARDEXPRESS\Downloads\picpay_challenge\picpay_challenge\obj\Debug\net8.0\picpay_challenge.genruntimeconfig.cache
 C:\Users\anthony.lbarros.CARDEXPRESS\Downloads\picpay_challenge\picpay_challenge\obj\Debug\net8.0\ref\picpay_challenge.dll
+C:\Users\anthony.lbarros.CARDEXPRESS\Downloads\picpay_challenge\picpay_challenge\obj\Debug\net8.0\picpay_challenge.sourcelink.json

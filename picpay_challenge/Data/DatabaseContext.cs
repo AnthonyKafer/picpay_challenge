@@ -10,6 +10,7 @@ namespace PicPayChallenge
         public DbSet<BaseUser> Users => Set<BaseUser>();
         public DbSet<User> RegularUsers => Set<User>();
         public DbSet<StoreKeeper> StoreKeepers => Set<StoreKeeper>();
+        public DbSet<Transaction> Transactions => Set<Transaction>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,6 +30,18 @@ namespace PicPayChallenge
             modelBuilder.Entity<StoreKeeper>()
                 .HasIndex(s => s.CNPJ)
                 .IsUnique();
+
+            modelBuilder.Entity<Transaction>()
+              .HasOne(t => t.Payer)
+              .WithMany()
+              .HasForeignKey(t => t.PayerId)
+              .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Transaction>()
+             .HasOne(t => t.Payee)
+             .WithMany()
+             .HasForeignKey(t => t.PayeeId)
+             .OnDelete(DeleteBehavior.Restrict);
         }
     }
 
