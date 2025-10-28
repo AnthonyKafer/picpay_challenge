@@ -18,7 +18,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: root_user
-      POSTGRES_PASSWORD: 123
+      POSTGRES_PASSWORD: 1234
       POSTGRES_DB: picpay_challenge_database
     ports:
       - "5432:5432"
