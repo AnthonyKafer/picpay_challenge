@@ -8,11 +8,14 @@ namespace PicPayChallenge.Models
     {
 
         public int Id { get; set; }
-        public enum UserType
+        public enum UserTypes
         {
             User,
             Storekeeper
         }
+        [Required]
+        public UserTypes UserType { get; set; }
+
         [Required]
         public string FullName { get; set; } = null!;
         [Required]
@@ -22,7 +25,7 @@ namespace PicPayChallenge.Models
         [Required]
         public string CPF { get; set; } = null!;
         [Required]
-        public DateTime CreateAt = DateTime.Now;
+        public DateTime CreateAt { get; set; } = DateTime.Now!;
         public DateTime? UpdatedAt { get; set; }
         [Required]
         public bool IsActive { get; set; } = true;

@@ -18,12 +18,22 @@ namespace picpay_challenge.Controllers
         [HttpPost("create-account")]
         public IActionResult CreateUser([FromBody] CreateUserPayloadDTO UserPayload)
         {
-            //var isValidEmail = Regex.IsMatch(UserPayload.Email, @"/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/");
-            //var isValidCPF = Regex.IsMatch(UserPayload.CPF, @"[0-9]{3}\.?[0-9]{3}\.?[0-9]{3}\-?[0-9]{2}");
-            //var isValidCNPJ = Regex.IsMatch(UserPayload.CNPJ, @"[0-9]{2}\.?[0-9]{3}\.?[0-9]{3}\/?[0-9]{4}\-?[0-9]{2}");
-            //var isValidBalance = UserPayload.Balance < 0;
+            bool isValidEmail = Regex.IsMatch(UserPayload.Email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+            bool isValidCPF = Regex.IsMatch(UserPayload.CPF, @"[0-9]{3}\.?[0-9]{3}\.?[0-9]{3}\-?[0-9]{2}");
 
-            if (!ModelState.IsValid) return BadRequest("Invalid Fields");
+            bool isValidCNPJ = UserPayload.CNPJ != null ?
+                Regex.IsMatch(UserPayload.CNPJ, @"[0-9]{2}\.?[0-9]{3}\.?[0-9]{3}\/?[0-9]{4}\-?[0-9]{2}")
+                : true;
+
+            var isValidBalance = UserPayload.Balance > 0;
+
+            if (
+                !isValidEmail ||
+                !isValidCPF ||
+                !isValidCNPJ ||
+                !isValidBalance
+                ) return BadRequest("Invalid fields");
+
             var newUserRegistry = _userService.CreateUser(UserPayload);
 
             return Ok(newUserRegistry);

@@ -15,6 +15,7 @@ namespace picpay_challenge.Repositories
         }
         public BaseUser Create(BaseUser userPayload)
         {
+            Console.WriteLine(userPayload);
             _context.Users.Add(userPayload);
             _context.SaveChanges();
             return userPayload;
