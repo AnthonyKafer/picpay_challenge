@@ -1,29 +1,6 @@
-version: '3.9'
-
 services:
-  api:
+  picpay_challenge:
+    image: ${DOCKER_REGISTRY-}picpaychallenge
     build:
-      context: ./picpay_challenge          # path to your API project
-      dockerfile: Dockerfile
-    ports:
-      - "8080:80"               # map container port 80 to host 5000
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__Default=Host=postgres;Database=picpay_challenge_database;Username=root_user;Password=123
-    depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:15-alpine
-    restart: always
-    environment:
-      POSTGRES_USER: root_user
-      POSTGRES_PASSWORD: 123
-      POSTGRES_DB: picpay_challenge_database
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-volumes:
-  pgdata:
+      context: .
+      dockerfile: picpay_challenge/Dockerfile

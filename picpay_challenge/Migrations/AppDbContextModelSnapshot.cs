@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using PicPayChallenge;
+using picpay_challenge.Domain.Data;
+
 
 #nullable disable
 
@@ -33,6 +34,9 @@ namespace picpay_challenge.Migrations
                     b.Property<decimal>("Balance")
                         .HasColumnType("numeric(18,5)");
 
+                    b.Property<string>("CNPJ")
+                        .HasColumnType("text");
+
                     b.Property<string>("CPF")
                         .IsRequired()
                         .HasColumnType("text");
@@ -55,15 +59,19 @@ namespace picpay_challenge.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("StoreName")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UserType")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("character varying(13)");
+                    b.Property<int>("UserType")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CNPJ")
+                        .IsUnique();
 
                     b.HasIndex("CPF")
                         .IsUnique();
@@ -72,10 +80,6 @@ namespace picpay_challenge.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-
-                    b.HasDiscriminator<string>("UserType").HasValue("BaseUser");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("PicPayChallenge.Models.Transaction", b =>
@@ -98,6 +102,9 @@ namespace picpay_challenge.Migrations
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Value")
                         .HasColumnType("numeric(18,5)");
 
@@ -108,31 +115,6 @@ namespace picpay_challenge.Migrations
                     b.HasIndex("PayerId");
 
                     b.ToTable("Transactions");
-                });
-
-            modelBuilder.Entity("PicPayChallenge.Models.StoreKeeper", b =>
-                {
-                    b.HasBaseType("PicPayChallenge.Models.BaseUser");
-
-                    b.Property<string>("CNPJ")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("StoreName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasIndex("CNPJ")
-                        .IsUnique();
-
-                    b.HasDiscriminator().HasValue("StoreKeeper");
-                });
-
-            modelBuilder.Entity("PicPayChallenge.Models.User", b =>
-                {
-                    b.HasBaseType("PicPayChallenge.Models.BaseUser");
-
-                    b.HasDiscriminator().HasValue("User");
                 });
 
             modelBuilder.Entity("PicPayChallenge.Models.Transaction", b =>
