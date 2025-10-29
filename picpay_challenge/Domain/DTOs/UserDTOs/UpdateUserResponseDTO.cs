@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace picpay_challenge.DTOs.UserDTOs
+namespace picpay_challenge.Domain.DTOs.UserDTOs
 {
-    public class UpdateUserDTO
+    public class UpdateUserResponseDTO
     {
         public int Id { get; set; }
         public string? FullName { get; set; } = null!;

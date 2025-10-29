@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using PicPayChallenge.Models;
+using picpay_challenge.Domain.Models;
 
-namespace PicPayChallenge
+namespace picpay_challenge.Domain.Data
 {
     public class AppDbContext : DbContext
     {
@@ -21,6 +21,11 @@ namespace PicPayChallenge
             modelBuilder.Entity<BaseUser>()
                 .HasIndex(u => u.CPF)
                 .IsUnique();
+
+            modelBuilder.Entity<BaseUser>()
+           .Property(u => u.UserType)
+           .HasConversion<int>()
+           .HasColumnType("int");
 
             modelBuilder.Entity<BaseUser>()
                 .HasIndex(u => u.CNPJ)

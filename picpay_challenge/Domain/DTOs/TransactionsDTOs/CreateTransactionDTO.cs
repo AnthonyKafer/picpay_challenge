@@ -1,8 +1,8 @@
 using PicPayChallenge.Models;
 using System.ComponentModel.DataAnnotations;
-namespace picpay_challenge.DTOs.UserDTOs
+namespace picpay_challenge.Domain.DTOs.TransactionsDTOs
 {
-    public class CreateUserPayloadDTO
+    public class CreateTransactionDTO
     {
         [Required]
         public string FullName { get; set; } = null!;

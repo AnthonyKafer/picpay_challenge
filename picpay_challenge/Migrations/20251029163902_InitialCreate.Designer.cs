@@ -5,15 +5,16 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using PicPayChallenge;
+using picpay_challenge.Domain.Data;
+
 
 #nullable disable
 
 namespace picpay_challenge.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251027200206_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20251029163902_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -35,6 +36,9 @@ namespace picpay_challenge.Migrations
 
                     b.Property<decimal>("Balance")
                         .HasColumnType("numeric(18,5)");
+
+                    b.Property<string>("CNPJ")
+                        .HasColumnType("text");
 
                     b.Property<string>("CPF")
                         .IsRequired()
@@ -58,15 +62,19 @@ namespace picpay_challenge.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("StoreName")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("UserType")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("character varying(13)");
+                    b.Property<int>("UserType")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CNPJ")
+                        .IsUnique();
 
                     b.HasIndex("CPF")
                         .IsUnique();
@@ -75,35 +83,60 @@ namespace picpay_challenge.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-
-                    b.HasDiscriminator<string>("UserType").HasValue("BaseUser");
-
-                    b.UseTphMappingStrategy();
                 });
 
-            modelBuilder.Entity("PicPayChallenge.Models.StoreKeeper", b =>
+            modelBuilder.Entity("PicPayChallenge.Models.Transaction", b =>
                 {
-                    b.HasBaseType("PicPayChallenge.Models.BaseUser");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
 
-                    b.Property<string>("CNPJ")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("StoreName")
-                        .IsRequired()
-                        .HasColumnType("text");
+                    b.Property<DateTime>("ConfirmedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.HasIndex("CNPJ")
-                        .IsUnique();
+                    b.Property<int>("PayeeId")
+                        .HasColumnType("integer");
 
-                    b.HasDiscriminator().HasValue("StoreKeeper");
+                    b.Property<int>("PayerId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("numeric(18,5)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PayeeId");
+
+                    b.HasIndex("PayerId");
+
+                    b.ToTable("Transactions");
                 });
 
-            modelBuilder.Entity("PicPayChallenge.Models.User", b =>
+            modelBuilder.Entity("PicPayChallenge.Models.Transaction", b =>
                 {
-                    b.HasBaseType("PicPayChallenge.Models.BaseUser");
+                    b.HasOne("PicPayChallenge.Models.BaseUser", "Payee")
+                        .WithMany()
+                        .HasForeignKey("PayeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
-                    b.HasDiscriminator().HasValue("User");
+                    b.HasOne("PicPayChallenge.Models.BaseUser", "Payer")
+                        .WithMany()
+                        .HasForeignKey("PayerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Payee");
+
+                    b.Navigation("Payer");
                 });
 #pragma warning restore 612, 618
         }

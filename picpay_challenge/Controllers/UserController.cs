@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using picpay_challenge.DTOs.UserDTOs;
-using PicPayChallenge.Services;
+using picpay_challenge.Domain.DTOs.UserDTOs;
+using picpay_challenge.Domain.Services;
+using picpay_challenge.Helpers;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 namespace picpay_challenge.Controllers
@@ -16,16 +18,13 @@ namespace picpay_challenge.Controllers
             _userService = userService;
         }
         [HttpPost("create-account")]
-        public IActionResult CreateUser([FromBody] CreateUserPayloadDTO UserPayload)
+        public IActionResult CreateUser([FromBody] CreateUserDTO UserPayload)
         {
-            bool isValidEmail = Regex.IsMatch(UserPayload.Email, @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
-            bool isValidCPF = Regex.IsMatch(UserPayload.CPF, @"[0-9]{3}\.?[0-9]{3}\.?[0-9]{3}\-?[0-9]{2}");
+            bool isValidEmail = Validator.IsValidEmail(UserPayload.Email);
+            bool isValidCPF = Validator.IsValidCPF(UserPayload.CPF);
+            bool isValidCNPJ = Validator.IsValidCNPJ(UserPayload.CNPJ == "" || UserPayload.CNPJ == null ? null : UserPayload.CNPJ);
 
-            bool isValidCNPJ = UserPayload.CNPJ != null ?
-                Regex.IsMatch(UserPayload.CNPJ, @"[0-9]{2}\.?[0-9]{3}\.?[0-9]{3}\/?[0-9]{4}\-?[0-9]{2}")
-                : true;
-
-            var isValidBalance = UserPayload.Balance > 0;
+            bool isValidBalance = UserPayload.Balance > 0;
 
             if (
                 !isValidEmail ||
@@ -34,24 +33,35 @@ namespace picpay_challenge.Controllers
                 !isValidBalance
                 ) return BadRequest("Invalid fields");
 
-            var newUserRegistry = _userService.CreateUser(UserPayload);
+            var newUserRegistry = _userService.Create(UserPayload);
 
             return Ok(newUserRegistry);
         }
-
-        [HttpGet("/user/{id}")]
-        public IActionResult GetUser(string id)
+        [HttpPost("login")]
+        public IActionResult Login([FromServices] AuthService authService, [FromBody] LoginUserDTO loginPayload)
         {
-            var user = _userService.GetById(int.Parse(id));
+            if (!_userService.ValidadateUserCredentials(loginPayload)) return Unauthorized();
+
+            var token = authService.GenerateToken(loginPayload.Email);
+            return Ok(new { token });
+        }
+
+
+        [Authorize]
+        [HttpGet("/user/{id}")]
+        public IActionResult GetUser(int id)
+        {
+            var user = _userService.FindById(id);
             if (user == null) return NotFound();
             return Ok(user);
 
         }
+        [Authorize]
         [HttpDelete("/user/delete/{id}")]
         public IActionResult DeleteUser(string id)
         {
             var user = _userService.Delete(int.Parse(id));
-            if (!user) return NotFound();
+            if (user == null) return NotFound();
             return Ok(new { Message = "Sucessfully deleted!" });
 
         }

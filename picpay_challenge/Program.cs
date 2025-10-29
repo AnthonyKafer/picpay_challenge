@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using picpay_challenge.Repositories;
-using PicPayChallenge;
+using picpay_challenge.Domain.Data;
+using picpay_challenge.Domain.Repositories;
+using picpay_challenge.Domain.Services;
+using picpay_challenge.Repositories.picpay_challenge.Repositories;
 using PicPayChallenge.Models;
-using PicPayChallenge.Services;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +44,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<TransactionRepository>();
+builder.Services.AddScoped<TransactionService>();
+builder.Services.AddSingleton<AuthService>();
+
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.

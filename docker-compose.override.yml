@@ -20,6 +20,7 @@ services:
 
   postgres:
     image: postgres:16
+    hostname: db
     container_name: picpay_challenge_database
     environment:
       POSTGRES_USER: root_user

@@ -2,7 +2,7 @@ using picpay_challenge.DTOs.UserDTOs;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace PicPayChallenge.Models
+namespace picpay_challenge.Domain.Models
 {
     public class BaseUser
     {
@@ -32,8 +32,8 @@ namespace PicPayChallenge.Models
 
         [Column(TypeName = "numeric(18,5)")]
         public decimal Balance { get; set; }
-        public string? CNPJ { get; set; }
-        public string? StoreName { get; set; }
+        public string? CNPJ { get; set; } = null;
+        public string? StoreName { get; set; } = null;
 
     }
 }
