@@ -27,7 +27,9 @@ namespace picpay_challenge.Domain.Services
             {
                 PayeeId = payload.PayeeId,
                 PayerId = payload.PayerId,
-            }
+                Value = payload.Value,
+
+            };
 
             var payment = _transactionRepository.Create(payload);
 
