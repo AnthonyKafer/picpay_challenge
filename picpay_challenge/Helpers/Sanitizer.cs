@@ -6,7 +6,7 @@ namespace picpay_challenge.Helpers
     {
         public static string OnlyDigits(string input)
         {
-            return Regex.Replace(input, @"[^\d]", "");
+            return Regex.Replace(input, @"\D", "");
         }
     }
 }
