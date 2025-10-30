@@ -1,8 +1,6 @@
 ﻿using picpay_challenge.Domain.Data;
 using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Repositories.Interfaces;
-using picpay_challenge.DTOs.TransactionsDTOs;
-using picpay_challenge.DTOs.UserDTOs;
 
 namespace picpay_challenge.Repositories
 {

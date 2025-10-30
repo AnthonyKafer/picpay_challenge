@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using picpay_challenge.Domain.DTOs.UserDTOs;
 using picpay_challenge.Domain.Services;
 using picpay_challenge.Helpers;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 namespace picpay_challenge.Controllers
@@ -51,8 +52,11 @@ namespace picpay_challenge.Controllers
         [HttpGet("/user/{id}")]
         public IActionResult GetUser(int id)
         {
+            var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
             var user = _userService.FindById(id);
+
             if (user == null) return NotFound();
+            if (user.Email != currentUserEmail) return Unauthorized("You can only see details of your own account");
             return Ok(user);
 
         }

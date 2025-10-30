@@ -1,4 +1,3 @@
-using picpay_challenge.DTOs.UserDTOs;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

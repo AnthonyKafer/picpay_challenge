@@ -1,6 +1,7 @@
-﻿namespace picpay_challenge.Domain.DTOs.TransactionsDTOs
+﻿using picpay_challenge.Domain.Models;
+
+namespace picpay_challenge.Domain.DTOs.TransactionsDTOs
 {
-    public class ResponseTransactionDTO
-    {
-    }
+    public class ResponseTransactionDTO : Transaction
+    { }
 }
