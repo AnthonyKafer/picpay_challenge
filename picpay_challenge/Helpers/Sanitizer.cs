@@ -8,9 +8,5 @@ namespace picpay_challenge.Helpers
         {
             return Regex.Replace(input, @"[^\d]", "");
         }
-        public static string OnlyLetters(string input)
-        {
-            return Regex.Replace(input, @"[^a-zA-Z]", "");
-        }
     }
 }
