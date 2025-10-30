@@ -26,7 +26,7 @@ namespace picpay_challenge.Domain.Services
         public BaseUser Create(CreateUserDTO UserPayload)
         {
 
-            bool isStorekeeper = UserPayload.CNPJ != "" && UserPayload.StoreName != "";
+            bool isStorekeeper = UserPayload.CNPJ != null && UserPayload.StoreName != null;
 
             var payload = new BaseUser
             {
@@ -44,6 +44,11 @@ namespace picpay_challenge.Domain.Services
 
             };
             return _userRepository.Create(payload);
+        }
+        public void ChangeUserBalance(int Id, decimal value)
+        {
+            _userRepository.ChangeUserBalance(Id, value);
+            return;
         }
         public List<BaseUser>? FindMany()
         {

@@ -1,5 +1,4 @@
-﻿using picpay_challenge.DTOs.UserDTOs;
-
+﻿
 namespace picpay_challenge.Domain.Repositories.Interfaces
 {
     public interface IRepositoryInterface<DTO>

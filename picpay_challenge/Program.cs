@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using picpay_challenge.Domain.Data;
+using picpay_challenge.Domain.Integrations;
 using picpay_challenge.Domain.Repositories;
 using picpay_challenge.Domain.Services;
 using picpay_challenge.Repositories.picpay_challenge.Repositories;
-using PicPayChallenge.Models;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +15,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
 });
-
 var key = builder.Configuration["Jwt:key"];
 builder.Services.AddAuthentication(options =>
 {
@@ -35,7 +34,11 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
     };
 });
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.NumberHandling =
+          System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString;
+});
 builder.Services.AddAuthorization();
 
 
@@ -47,7 +50,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<TransactionRepository>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddSingleton<AuthService>();
-
+builder.Services.AddHttpClient<PaymentExternalAuthorizor>();
 
 var app = builder.Build();
 // Configure the HTTP request pipeline.

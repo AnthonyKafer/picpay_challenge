@@ -26,6 +26,15 @@ namespace picpay_challenge.Domain.Repositories
         {
             return _context.Users.FirstOrDefault();
         }
+        public void ChangeUserBalance(int Id, decimal value)
+        {
+            var user = _context.Users.FirstOrDefault(x => x.Id == Id);
+            if (user == null) return;
+            user.Balance += value;
+            _context.SaveChanges();
+            return;
+        }
+
         public BaseUser Create(BaseUser userPayload)
         {
             Console.WriteLine(userPayload);

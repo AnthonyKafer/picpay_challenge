@@ -38,15 +38,12 @@ namespace picpay_challenge.Controllers
         }
 
         [HttpPost("make-payment")]
-        public ActionResult MakePayment([FromBody] CreateTransactionDTO payload)
+        public async Task<ActionResult> MakePayment([FromServices] UserService userService, [FromBody] CreateTransactionDTO payload)
         {
-            var payer = userService.FindById(payload.PayerId);
-            var payee = userService.FindById(payload.PayeeId);
-            if (payer == null || payee == null) return BadRequest("Payer or payee not found");
-            if (payer.UserType == BaseUser.UserTypes.Storekeeper) return BadRequest("You cannot make transfers from an storekeeper account");
 
-            var payment = _transactionService.Create(payload);
-
+            var payment = await _transactionService.Create(userService, payload);
+            if (payment.Message != "Success") return BadRequest(payment);
+            return Ok(payment);
         }
 
     }
