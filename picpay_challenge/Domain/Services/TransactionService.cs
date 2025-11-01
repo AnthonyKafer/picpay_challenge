@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using picpay_challenge.Domain.DTOs.TransactionsDTOs;
+using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Integrations;
 using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Services.Interfaces;
 using picpay_challenge.Repositories.picpay_challenge.Repositories;
+using System.Net;
 
 namespace picpay_challenge.Domain.Services
 {
@@ -21,22 +23,11 @@ namespace picpay_challenge.Domain.Services
         {
             var payer = userService.FindById(payload.PayerId) ?? null;
             var payee = userService.FindById(payload.PayeeId) ?? null;
-            if (payer == null || payee == null) return new ServiceResponseTransactionDTO
-            {
-                Message = "Either payer or payee do not exist",
-                Data = null,
-            };
-            if (payer.UserType == BaseUser.UserTypes.Storekeeper) return new ServiceResponseTransactionDTO
-            {
-                Message = "An storekeeper cannot pay transfers",
-                Data = null,
-            }
-            ;
-            if (payer.Balance - payload.Value < 0) return new ServiceResponseTransactionDTO
-            {
-                Message = "Not enough funds",
-                Data = null,
-            };
+            if (payer == null || payee == null) throw new HttpException(HttpStatusCode.NotFound, "Either payer or payee do not exist");
+
+            if (payer.Role != BaseUser.Roles.User) throw new HttpException(HttpStatusCode.Unauthorized, "Only regular users can pay transfers");
+
+            if (payer.Balance - payload.Value < 0) throw new HttpException(HttpStatusCode.Unauthorized, "No enough funds");
 
             Transaction transaction = new Transaction
             {
@@ -49,31 +40,33 @@ namespace picpay_challenge.Domain.Services
 
             var paymentAuthorization = await _paymentExternalAuthorizor.IsPaymentAuthorized();
 
-            if (paymentAuthorization == null) return new ServiceResponseTransactionDTO
-            {
-                Message = "Something went wrong",
-                Data = null,
-            };
-            if (!paymentAuthorization.Data.authorization) return new ServiceResponseTransactionDTO
-            {
-                Message = "Transaction not authorized by external validator",
-                Data = null,
-            };
+            if (paymentAuthorization == null) throw new HttpException(HttpStatusCode.Unauthorized, "Something went wrong");
+
+            if (!paymentAuthorization.Data.authorization) throw new HttpException(HttpStatusCode.Unauthorized, "Transaction not authorized by external validator");
 
             var payment = _transactionRepository.Create(transaction);
             userService.ChangeUserBalance(payee.Id, payload.Value);
             userService.ChangeUserBalance(payer.Id, -payload.Value);
-            if (payment == null) return null;
+            if (payment == null) throw new HttpException(HttpStatusCode.InternalServerError, "Something went wrong while registering the payment");
             return new ServiceResponseTransactionDTO
             {
                 Message = "Succes",
                 Data = payment,
             };
         }
+        public List<Transaction?> GetUserTransactions([FromServices] UserService userService, int id, string userEmail)
+        {
+            var user = userService.FindById(id) ?? null;
+            if (user == null) throw new HttpException(HttpStatusCode.NotFound, "User does not exist");
+            if (user.Email != userEmail) throw new HttpException(HttpStatusCode.Unauthorized, "You cannot access registers that are not associated with your account");
+
+            return _transactionRepository.FindByUserId(id);
+        }
         public List<Transaction>? FindMany()
         {
             return _transactionRepository.FindMany();
         }
+
         public Transaction? FindById(int id)
         {
             return _transactionRepository.FindById(id);

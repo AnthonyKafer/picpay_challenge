@@ -20,6 +20,13 @@ namespace picpay_challenge.Repositories
                 List<Transaction>? transactions = _context.Transactions.ToList() ?? null;
                 return transactions ?? null;
             }
+            public List<Transaction?> FindByUserId(int UserId)
+            {
+                var transatiction = _context.Transactions.Where(x => x.PayerId == UserId).ToList() ?? null;
+                if (transatiction == null) return null;
+                return transatiction;
+            }
+
             public Transaction? FindById(int Id)
             {
                 var transatiction = _context.Transactions.FirstOrDefault(x => x.Id == Id) ?? null;

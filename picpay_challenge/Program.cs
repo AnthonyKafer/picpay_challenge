@@ -5,6 +5,7 @@ using picpay_challenge.Domain.Data;
 using picpay_challenge.Domain.Integrations;
 using picpay_challenge.Domain.Repositories;
 using picpay_challenge.Domain.Services;
+using picpay_challenge.Middleware;
 using picpay_challenge.Repositories.picpay_challenge.Repositories;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +35,9 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
     };
 });
+
+builder.Services.AddTransient<GlobalExeceptionHandlingMiddleware>();
+
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.NumberHandling =
@@ -53,6 +57,7 @@ builder.Services.AddSingleton<AuthService>();
 builder.Services.AddHttpClient<PaymentExternalAuthorizor>();
 
 var app = builder.Build();
+app.UseMiddleware<GlobalExeceptionHandlingMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

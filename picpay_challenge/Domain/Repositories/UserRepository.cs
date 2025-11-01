@@ -1,6 +1,8 @@
 ﻿using picpay_challenge.Domain.Data;
+using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Repositories.Interfaces;
+using System.Net;
 
 namespace picpay_challenge.Domain.Repositories
 {
@@ -37,10 +39,24 @@ namespace picpay_challenge.Domain.Repositories
 
         public BaseUser Create(BaseUser userPayload)
         {
-            Console.WriteLine(userPayload);
-            _context.Users.Add(userPayload);
-            _context.SaveChanges();
-            return userPayload;
+            try
+            {
+                Console.WriteLine(userPayload);
+                _context.Users.Add(userPayload);
+                _context.SaveChanges();
+                return userPayload;
+            }
+            catch (Exception ex)
+            {
+                string errorMessage = ex.InnerException.Message;
+                if (errorMessage.Split(":")[0] == "23505")
+                {
+                    throw new HttpException(HttpStatusCode.Conflict, "One of the used credentials is already registered");
+                }
+                else throw new HttpException(HttpStatusCode.InternalServerError, ex.Message);
+
+            }
+
         }
         public BaseUser GetUserCredentials(string Email)
         {

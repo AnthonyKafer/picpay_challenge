@@ -22,7 +22,7 @@ namespace picpay_challenge.Domain.Services
         {
             var claims = new[]
       {
-            new Claim(JwtRegisteredClaimNames.Sub, Email),
+            new Claim(JwtRegisteredClaimNames.Email, Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));

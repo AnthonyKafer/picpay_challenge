@@ -4,6 +4,7 @@ using picpay_challenge.Domain.DTOs.TransactionsDTOs;
 using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Services;
 using System.Reflection.Metadata.Ecma335;
+using System.Security.Claims;
 
 namespace picpay_challenge.Controllers
 {
@@ -23,18 +24,18 @@ namespace picpay_challenge.Controllers
         /// <summary>
         /// XXXXXXXXXXXXXXXXX
         /// </summary>
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
-        public ActionResult<List<Transaction>> GetTransactions([FromQuery] TransactionFilterQueryDto filter)
-        {
-            return Ok(_transactionService.FindMany());
-        }
 
-        [HttpGet("{id:int}")]
-        public IActionResult GetTransactionById([FromRoute] int id)
+        [HttpGet("user/{userId:int}")]
+        public ActionResult<List<Transaction>> GetUserTransactions([FromServices] UserService userService, [FromRoute] int userId)
         {
-            return Ok(_transactionService.FindById(id));
+            ClaimsPrincipal currentUser = HttpContext.User;
+
+            string email = currentUser.FindFirst(ClaimTypes.Email)?.Value;
+
+            List<Transaction?> transactionsList = _transactionService.GetUserTransactions(userService, userId, email);
+
+            if (transactionsList.Count == 0) return NoContent();
+            return Ok(transactionsList);
         }
 
         [HttpPost("make-payment")]
@@ -45,7 +46,20 @@ namespace picpay_challenge.Controllers
             if (payment.Message != "Success") return BadRequest(payment);
             return Ok(payment);
         }
+        [Authorize]
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
+        public ActionResult<List<Transaction>> GetTransactions([FromQuery] TransactionFilterQueryDto filter)
+        {
+            return Ok(_transactionService.FindMany());
+        }
 
+        [HttpGet("{transactionId:int}")]
+        public IActionResult GetTransactionById([FromRoute] int transactionId)
+        {
+            return Ok(_transactionService.FindById(transactionId));
+        }
     }
 
     public class TransactionFilterQueryDto

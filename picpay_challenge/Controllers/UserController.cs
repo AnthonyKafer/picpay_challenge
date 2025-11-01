@@ -23,7 +23,7 @@ namespace picpay_challenge.Controllers
         {
             bool isValidEmail = Validator.IsValidEmail(UserPayload.Email);
             bool isValidCPF = Validator.IsValidCPF(UserPayload.CPF);
-            bool isValidCNPJ = Validator.IsValidCNPJ(UserPayload.CNPJ == "" || UserPayload.CNPJ == null ? null : UserPayload.CNPJ);
+            bool isValidCNPJ = UserPayload.CNPJ == "" || UserPayload.CNPJ == null ? true : Validator.IsValidCNPJ(UserPayload.CNPJ);
 
             bool isValidBalance = UserPayload.Balance > 0;
 
