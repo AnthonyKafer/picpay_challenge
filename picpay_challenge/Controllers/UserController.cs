@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using picpay_challenge.Domain.DTOs.TransactionsDTOs;
 using picpay_challenge.Domain.DTOs.UserDTOs;
+using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Services;
 using picpay_challenge.Helpers;
@@ -19,7 +21,19 @@ namespace picpay_challenge.Controllers
         {
             _userService = userService;
         }
+        /// <summary>
+        /// Cria uma conta.
+        /// </summary>
+        /// <param name="UserPayload">Informações relativas ao Usuário</param>
+        /// <returns>Retorna o usuário criado.</returns>
+        /// <response code="400">Caso o payload tenha algum problema.</response>
+        /// <response code="409">Caso alguma das credenciais usadas já tiver sido usada em outro registro de usuário.</response>
+        /// <response code="500">Caso ocorra algum erro ao salvar.</response>
         [HttpPost("create-account")]
+        [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(HttpException), 400)]
+        [ProducesResponseType(typeof(HttpException), 409)]
+        [ProducesResponseType(typeof(HttpException), 500)]
         public ActionResult<ResponseUserDTO> CreateUser([FromBody] CreateUserDTO UserPayload)
         {
             bool isValidEmail = Validator.IsValidEmail(UserPayload.Email);
@@ -39,7 +53,19 @@ namespace picpay_challenge.Controllers
 
             return Ok(newUserRegistry);
         }
+        /// <summary>
+        /// Cria um usuário administrador.
+        /// </summary>
+        /// <param name="UserPayload">Informações relativas ao administrador.</param>
+        /// <returns>Retorna o administrador criado.</returns>
+        /// <response code="400">Caso o CPF não seja válido.</response>
+        /// <response code="409">Caso alguma das credenciais usadas já tiver sido usada em outro registro de usuário.</response>
+        /// <response code="500">Caso ocorra algum erro ao salvar.</response>
         [HttpPost("create-admin")]
+        [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(HttpException), 400)]
+        [ProducesResponseType(typeof(HttpException), 409)]
+        [ProducesResponseType(typeof(HttpException), 500)]
         public ActionResult<ResponseUserDTO> CreateAdmin([FromBody] CreateUserDTO UserPayload)
         {
             bool isValidCPF = Validator.IsValidCPF(UserPayload.CPF);
@@ -48,7 +74,19 @@ namespace picpay_challenge.Controllers
 
             return Ok(newUserRegistry);
         }
+
+        /// <summary>
+        /// Faz o login de um usuário.
+        /// </summary>
+        /// <param name="loginPayload">Informações relativas ao login.</param>
+        /// <returns>Retorna o token JWT Bearer.</returns>
+        /// <response code="401">Caso os dados sejão inválidos.</response>
+        /// <response code="404">Caso o usuário não exista.</response>
+
         [HttpPost("login")]
+        [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(HttpException), 404)]
+        [ProducesResponseType(typeof(HttpException), 401)]
         public ActionResult Login([FromServices] AuthService authService, [FromBody] LoginUserDTO loginPayload)
         {
             if (!_userService.ValidadateUserCredentials(loginPayload)) return Unauthorized();
@@ -57,9 +95,18 @@ namespace picpay_challenge.Controllers
             return Ok(new { token });
         }
 
-
+        /// <summary>
+        /// Busca o registro de um usuário.
+        /// </summary>
+        /// <param name="id">Id do usuário.</param>
+        /// <returns>Retorna o usuário.</returns>
+        /// <response code="401">Caso o usuário não seja um administrador e esteja vendo um registro que não é dele.</response>
+        /// <response code="404">Caso o usuário não exista.</response>
         [Authorize]
         [HttpGet("/user/{id}")]
+        [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(HttpException), 404)]
+        [ProducesResponseType(typeof(HttpException), 401)]
         public ActionResult<ResponseUserDTO> GetUser(int id)
         {
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
@@ -70,8 +117,18 @@ namespace picpay_challenge.Controllers
             return Ok(user);
 
         }
+        /// <summary>
+        /// Exclui o registro de um usuário - soft delete.
+        /// </summary>
+        /// <param name="id">Id do usuário.</param>
+        /// <returns>Retorna o usuário.</returns>
+        /// <response code="401">Caso o usuário esteja excluindo um registro que não é dele.</response>
+        /// <response code="404">Caso o usuário não exista.</response>
         [Authorize]
         [HttpDelete("/user/delete/{id}")]
+        [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(HttpException), 404)]
+        [ProducesResponseType(typeof(HttpException), 401)]
         public ActionResult<ResponseUserDTO> DeleteUser(string id)
         {
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;

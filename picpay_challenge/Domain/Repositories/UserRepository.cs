@@ -105,7 +105,7 @@ namespace picpay_challenge.Domain.Repositories
         }
         public BaseUser? GetUserCredentials(string Email)
         {
-            var userCredentials = _context.Users.SingleOrDefault(x => x.Email == Email);
+            var userCredentials = _context.Users.FirstOrDefault(x => x.Email == Email);
             return userCredentials ?? null;
         }
         public ResponseUserDTO? Delete(int id)

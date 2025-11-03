@@ -1,4 +1,5 @@
-﻿using picpay_challenge.Domain.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using picpay_challenge.Domain.Data;
 using picpay_challenge.Domain.DTOs.TransactionsDTOs;
 using picpay_challenge.Domain.DTOs.UserDTOs;
 using picpay_challenge.Domain.Exceptions;
@@ -24,12 +25,12 @@ namespace picpay_challenge.Repositories
                 new ResponseTransactionDTO()
                 {
                     Value = transaction.Value,
-                    Payer = new PayerAndPayee
+                    Payer = new PayerAndPayee()
                     {
                         FullName = transaction.Payer.FullName,
                         Id = transaction.Payer.Id
                     },
-                    Payee = new PayerAndPayee
+                    Payee = new PayerAndPayee()
                     {
                         FullName = transaction.Payee.FullName,
                         Id = transaction.Payee.Id
@@ -48,12 +49,12 @@ namespace picpay_challenge.Repositories
                 new ResponseTransactionDTO()
                 {
                     Value = transaction.Value,
-                    Payer = new PayerAndPayee
+                    Payer = new PayerAndPayee()
                     {
                         FullName = transaction.Payer.FullName,
                         Id = transaction.Payer.Id
                     },
-                    Payee = new PayerAndPayee
+                    Payee = new PayerAndPayee()
                     {
                         FullName = transaction.Payee.FullName,
                         Id = transaction.Payee.Id
@@ -68,27 +69,30 @@ namespace picpay_challenge.Repositories
                 return transactions;
             }
 
-            public ResponseTransactionDTO? FindById(int Id)
+            public ResponseTransactionDTO? FindById(int Id, int userId)
             {
-                var transatiction = _context.Transactions.FirstOrDefault(x => x.Id == Id) ?? null;
+                var transaction = _context.Transactions
+                    .Include(transaction => transaction.Payee)
+                    .Include(transaction => transaction.Payer)
+                    .FirstOrDefault(x => x.Id == Id && x.PayerId == userId) ?? null;
 
-                if (transatiction == null) return null;
+                if (transaction == null) throw new HttpException(HttpStatusCode.NotFound, "Transaction not found");
                 return new ResponseTransactionDTO()
                 {
-                    Payer = new PayerAndPayee
+                    Payer = new PayerAndPayee()
                     {
-                        FullName = transatiction.Payer.FullName,
-                        Id = transatiction.Payer.Id
+                        FullName = transaction.Payer.FullName,
+                        Id = transaction.Payer.Id
                     },
-                    Payee = new PayerAndPayee
+                    Payee = new PayerAndPayee()
                     {
-                        FullName = transatiction.Payee.FullName,
-                        Id = transatiction.Payee.Id
+                        FullName = transaction.Payee.FullName,
+                        Id = transaction.Payee.Id
                     },
-                    Value = transatiction.Value,
-                    ConfirmedAt = transatiction.ConfirmedAt,
-                    StartedAt = transatiction.StartedAt,
-                    Status = transatiction.Status
+                    Value = transaction.Value,
+                    ConfirmedAt = transaction.ConfirmedAt,
+                    StartedAt = transaction.StartedAt,
+                    Status = transaction.Status
                 };
             }
             public async Task<ResponseTransactionDTO?> Create(Transaction payload, int payerId, int payeeId)

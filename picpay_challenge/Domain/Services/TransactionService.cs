@@ -67,9 +67,9 @@ namespace picpay_challenge.Domain.Services
             return _transactionRepository.FindMany();
         }
 
-        public ResponseTransactionDTO? FindById(int id)
+        public ResponseTransactionDTO? FindById(int id, int userId)
         {
-            return _transactionRepository.FindById(id);
+            return _transactionRepository.FindById(id, userId);
         }
 
     }
