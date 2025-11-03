@@ -53,7 +53,7 @@ builder.Services.AddSwaggerGen(swagger =>
 {
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    swagger.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+    swagger.IncludeXmlComments(xmlPath);
 });
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserService>();

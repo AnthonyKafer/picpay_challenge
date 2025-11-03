@@ -4,6 +4,7 @@ using picpay_challenge.Domain.DTOs.TransactionsDTOs;
 using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Services;
+using picpay_challenge.Middleware;
 using System.Security.Claims;
 
 namespace picpay_challenge.Controllers
@@ -28,8 +29,8 @@ namespace picpay_challenge.Controllers
         /// <response code="401">Caso o usuário não seja um administrador.</response>
         [HttpGet]
         [ProducesResponseType(typeof(ResponseTransactionDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(HttpException), 404)]
-        [ProducesResponseType(typeof(HttpException), 401)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
         public ActionResult<List<ResponseTransactionDTO>> GetTransactions([FromServices] UserService userService)
         {
             ClaimsPrincipal currentUser = HttpContext.User;
@@ -51,8 +52,8 @@ namespace picpay_challenge.Controllers
         /// <response code="401">Caso o usuário não seja um administrador.</response>
         [HttpGet("{transactionId}")]
         [ProducesResponseType(typeof(ResponseTransactionDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(HttpException), 401)]
-        [ProducesResponseType(typeof(HttpException), 404)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
         public ActionResult<ResponseTransactionDTO> GetTransactionById([FromServices] UserService userService, int transactionId)
         {
             ClaimsPrincipal currentUser = HttpContext.User;
@@ -74,8 +75,8 @@ namespace picpay_challenge.Controllers
         /// <returns>Retorna uma lista de transações do usuário.</returns>
         [HttpGet("user/{userId:int}")]
         [ProducesResponseType(typeof(List<ResponseTransactionDTO?>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(HttpException), 401)]
-        [ProducesResponseType(typeof(HttpException), 404)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
         public ActionResult<List<ResponseTransactionDTO?>?> GetUserTransactions([FromServices] UserService userService, [FromRoute] int userId)
         {
             ClaimsPrincipal currentUser = HttpContext.User;
@@ -100,9 +101,9 @@ namespace picpay_challenge.Controllers
         /// <response code="401">Caso o integrador não autorize a transação.</response>
         [HttpPost("make-payment")]
         [ProducesResponseType(typeof(ResponseTransactionDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(HttpException), 400)]
-        [ProducesResponseType(typeof(HttpException), 404)]
-        [ProducesResponseType(typeof(HttpException), 401)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 400)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
         public async Task<ActionResult<ResponseTransactionDTO?>> MakePayment([FromServices] UserService userService, [FromBody] CreateTransactionDTO payload)
         {
 

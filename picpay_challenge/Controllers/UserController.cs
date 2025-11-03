@@ -6,6 +6,7 @@ using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Services;
 using picpay_challenge.Helpers;
+using picpay_challenge.Middleware;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -31,9 +32,9 @@ namespace picpay_challenge.Controllers
         /// <response code="500">Caso ocorra algum erro ao salvar.</response>
         [HttpPost("create-account")]
         [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(HttpException), 400)]
-        [ProducesResponseType(typeof(HttpException), 409)]
-        [ProducesResponseType(typeof(HttpException), 500)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 400)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 409)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 500)]
         public ActionResult<ResponseUserDTO> CreateUser([FromBody] CreateUserDTO UserPayload)
         {
             bool isValidEmail = Validator.IsValidEmail(UserPayload.Email);
@@ -63,9 +64,9 @@ namespace picpay_challenge.Controllers
         /// <response code="500">Caso ocorra algum erro ao salvar.</response>
         [HttpPost("create-admin")]
         [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(HttpException), 400)]
-        [ProducesResponseType(typeof(HttpException), 409)]
-        [ProducesResponseType(typeof(HttpException), 500)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 400)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 409)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 500)]
         public ActionResult<ResponseUserDTO> CreateAdmin([FromBody] CreateUserDTO UserPayload)
         {
             bool isValidCPF = Validator.IsValidCPF(UserPayload.CPF);
@@ -85,8 +86,8 @@ namespace picpay_challenge.Controllers
 
         [HttpPost("login")]
         [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(HttpException), 404)]
-        [ProducesResponseType(typeof(HttpException), 401)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
         public ActionResult Login([FromServices] AuthService authService, [FromBody] LoginUserDTO loginPayload)
         {
             if (!_userService.ValidadateUserCredentials(loginPayload)) return Unauthorized();
@@ -105,8 +106,8 @@ namespace picpay_challenge.Controllers
         [Authorize]
         [HttpGet("/user/{id}")]
         [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(HttpException), 404)]
-        [ProducesResponseType(typeof(HttpException), 401)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
         public ActionResult<ResponseUserDTO> GetUser(int id)
         {
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
@@ -127,8 +128,8 @@ namespace picpay_challenge.Controllers
         [Authorize]
         [HttpDelete("/user/delete/{id}")]
         [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(HttpException), 404)]
-        [ProducesResponseType(typeof(HttpException), 401)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
         public ActionResult<ResponseUserDTO> DeleteUser(string id)
         {
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;

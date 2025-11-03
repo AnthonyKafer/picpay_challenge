@@ -7,6 +7,13 @@ using System.Text.Json;
 
 namespace picpay_challenge.Middleware
 {
+    public class DefaultErrorMessage
+    {
+        public HttpStatusCode Status { get; set; }
+        public required string Message { get; set; }
+
+    }
+
     public class GlobalExeceptionHandlingMiddleware : IMiddleware
     {
         private readonly ILogger<GlobalExeceptionHandlingMiddleware> _logger;
@@ -34,10 +41,10 @@ namespace picpay_challenge.Middleware
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)status;
 
-            var errorResponse = new
+            DefaultErrorMessage errorResponse = new DefaultErrorMessage()
             {
-                status = status,
-                error = message
+                Status = status,
+                Message = message
             };
 
             await context.Response.WriteAsJsonAsync(errorResponse);
