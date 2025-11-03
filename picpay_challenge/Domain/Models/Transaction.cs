@@ -15,7 +15,7 @@ namespace picpay_challenge.Domain.Models
         [ForeignKey(nameof(PayeeId))] public BaseUser Payee { get; set; } = null!;
 
         public DateTime StartedAt { get; set; }
-        public DateTime ConfirmedAt { get; set; }
+        public DateTime? ConfirmedAt { get; set; }
         public enum StatusTypes
         {
             Pending,

@@ -1,3 +1,4 @@
+using picpay_challenge.Domain.Models;
 using System.ComponentModel.DataAnnotations;
 namespace picpay_challenge.Domain.DTOs.UserDTOs
 {

@@ -3,58 +3,58 @@ using picpay_challenge.Domain.DTOs.TransactionsDTOs;
 using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Integrations;
 using picpay_challenge.Domain.Models;
-using picpay_challenge.Domain.Services.Interfaces;
 using picpay_challenge.Repositories.picpay_challenge.Repositories;
 using System.Net;
 
 namespace picpay_challenge.Domain.Services
 {
-    public class TransactionService : IServiceInterface<Transaction>
+    public class TransactionService
     {
         private readonly TransactionRepository _transactionRepository;
         private readonly PaymentExternalAuthorizor _paymentExternalAuthorizor;
-
-        public TransactionService(TransactionRepository userRepository, PaymentExternalAuthorizor paymentExternalAuthorizor)
+        private readonly NotificationExternal _notificationExternal;
+        public TransactionService(TransactionRepository userRepository, PaymentExternalAuthorizor paymentExternalAuthorizor, NotificationExternal notificationExternal)
         {
             _transactionRepository = userRepository;
             _paymentExternalAuthorizor = paymentExternalAuthorizor;
+            _notificationExternal = notificationExternal;
+
         }
-        public async Task<ServiceResponseTransactionDTO?> Create([FromServices] UserService userService, CreateTransactionDTO payload)
+        public async Task<ResponseTransactionDTO?> Create([FromServices] UserService userService, CreateTransactionDTO payload)
         {
             var payer = userService.FindById(payload.PayerId) ?? null;
             var payee = userService.FindById(payload.PayeeId) ?? null;
             if (payer == null || payee == null) throw new HttpException(HttpStatusCode.NotFound, "Either payer or payee do not exist");
-
             if (payer.Role != BaseUser.Roles.User) throw new HttpException(HttpStatusCode.Unauthorized, "Only regular users can pay transfers");
 
             if (payer.Balance - payload.Value < 0) throw new HttpException(HttpStatusCode.Unauthorized, "No enough funds");
+            DateTime proccessStart = DateTime.UtcNow;
 
-            Transaction transaction = new Transaction
-            {
-                PayeeId = payload.PayeeId,
-                PayerId = payload.PayerId,
-                Value = payload.Value,
-                StartedAt = DateTime.UtcNow,
-                ConfirmedAt = DateTime.UtcNow,
-            };
+
 
             var paymentAuthorization = await _paymentExternalAuthorizor.IsPaymentAuthorized();
 
             if (paymentAuthorization == null) throw new HttpException(HttpStatusCode.Unauthorized, "Something went wrong");
 
             if (!paymentAuthorization.Data.authorization) throw new HttpException(HttpStatusCode.Unauthorized, "Transaction not authorized by external validator");
-
-            var payment = _transactionRepository.Create(transaction);
-            userService.ChangeUserBalance(payee.Id, payload.Value);
-            userService.ChangeUserBalance(payer.Id, -payload.Value);
-            if (payment == null) throw new HttpException(HttpStatusCode.InternalServerError, "Something went wrong while registering the payment");
-            return new ServiceResponseTransactionDTO
+            Transaction transaction = new Transaction()
             {
-                Message = "Succes",
-                Data = payment,
+                PayeeId = payload.PayeeId,
+                PayerId = payload.PayerId,
+                Value = payload.Value,
+                StartedAt = proccessStart,
+                ConfirmedAt = DateTime.UtcNow,
+                Status = Transaction.StatusTypes.Approved
             };
+            var payment = await _transactionRepository.Create(transaction, payer.Id, payee.Id);
+
+            if (payment == null) throw new HttpException(HttpStatusCode.InternalServerError, "Something went wrong while registering the payment");
+
+            await _notificationExternal.SendConfirmNotification();
+
+            return payment;
         }
-        public List<Transaction?> GetUserTransactions([FromServices] UserService userService, int id, string userEmail)
+        public List<ResponseTransactionDTO?> GetUserTransactions([FromServices] UserService userService, int id, string userEmail)
         {
             var user = userService.FindById(id) ?? null;
             if (user == null) throw new HttpException(HttpStatusCode.NotFound, "User does not exist");
@@ -62,18 +62,15 @@ namespace picpay_challenge.Domain.Services
 
             return _transactionRepository.FindByUserId(id);
         }
-        public List<Transaction>? FindMany()
+        public List<ResponseTransactionDTO?>? FindMany()
         {
             return _transactionRepository.FindMany();
         }
 
-        public Transaction? FindById(int id)
+        public ResponseTransactionDTO? FindById(int id)
         {
             return _transactionRepository.FindById(id);
         }
-        public Transaction? ContestTransaction(int id)
-        {
-            return _transactionRepository.ContestTransaction(id);
-        }
+
     }
 }
