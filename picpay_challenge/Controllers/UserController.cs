@@ -90,32 +90,56 @@ namespace picpay_challenge.Controllers
         [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
         public ActionResult Login([FromServices] AuthService authService, [FromBody] LoginUserDTO loginPayload)
         {
-            if (!_userService.ValidadateUserCredentials(loginPayload)) return Unauthorized();
+            var user = _userService.ValidadateUserCredentials(loginPayload);
+            if (user == null) return Unauthorized();
 
-            var token = authService.GenerateToken(loginPayload.Email);
+            var token = authService.GenerateToken(loginPayload.Email, user.Role, user.Id);
             return Ok(new { token });
+        }
+
+        /// <summary>
+        /// Busca o registros de usuários - apenas administradores podem acessar.
+        /// </summary>
+        /// <param name="query">Parâmetros de filtros.</param>
+        /// <returns>Retorna o usuário.</returns>
+        /// <response code="401">Caso o usuário não seja um administrador.</response>
+        /// <response code="404">Caso o usuário não exista.</response>
+        [Authorize]
+        [HttpGet("/users")]
+        [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
+        [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
+        public ActionResult<ResponseUserDTO> GetUsers([FromQuery] UserQuery query)
+        {
+            ClaimsPrincipal currentUser = HttpContext.User;
+            string? roleClaim = currentUser.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (roleClaim == null) return Unauthorized("Login to use the system.");
+
+            BaseUser.Roles role = Enum.Parse<BaseUser.Roles>(roleClaim);
+            if (role != BaseUser.Roles.Admin) return Unauthorized("You can only see details of your own account");
+
+            return Ok(_userService.FindMany(query));
+
         }
 
         /// <summary>
         /// Busca o registro de um usuário.
         /// </summary>
-        /// <param name="id">Id do usuário.</param>
         /// <returns>Retorna o usuário.</returns>
         /// <response code="401">Caso o usuário não seja um administrador e esteja vendo um registro que não é dele.</response>
         /// <response code="404">Caso o usuário não exista.</response>
         [Authorize]
-        [HttpGet("/user/{id}")]
+        [HttpGet("/user/me")]
         [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
         [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
-        public ActionResult<ResponseUserDTO> GetUser(int id)
+        public ActionResult<ResponseUserDTO> GetUser()
         {
-            var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            var user = _userService.FindById(id);
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-            if (user == null) return NotFound();
-            if (user.Email != currentUserEmail && user.Role != BaseUser.Roles.Admin) return Unauthorized("You can only see details of your own account");
-            return Ok(user);
+            if (currentUserId == null) return Unauthorized("Login to use the system");
+            return Ok(_userService.FindById(currentUserId));
 
         }
         /// <summary>
@@ -126,17 +150,17 @@ namespace picpay_challenge.Controllers
         /// <response code="401">Caso o usuário esteja excluindo um registro que não é dele.</response>
         /// <response code="404">Caso o usuário não exista.</response>
         [Authorize]
-        [HttpDelete("/user/delete/{id}")]
+        [HttpDelete("/user/delete")]
         [ProducesResponseType(typeof(ResponseUserDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
         [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
-        public ActionResult<ResponseUserDTO> DeleteUser(string id)
+        public ActionResult<ResponseUserDTO> DeleteUser()
         {
-            var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
-            var user = _userService.FindById(int.Parse(id));
-            if (user == null) return NotFound();
-            if (user.Email != currentUserEmail && user.Role != BaseUser.Roles.Admin) return Unauthorized("You can only delete your own account");
-            var res = _userService.Delete(int.Parse(id));
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+            if (currentUserId == null) return Unauthorized("Login to use the system");
+
+            var res = _userService.Delete(currentUserId);
 
             return Ok(res);
 

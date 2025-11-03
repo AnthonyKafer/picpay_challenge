@@ -17,12 +17,12 @@ namespace picpay_challenge.Domain.Services
             _userRepository = userRepository;
         }
 
-        public bool ValidadateUserCredentials(LoginUserDTO payload)
+        public BaseUser ValidadateUserCredentials(LoginUserDTO payload)
         {
             var user = _userRepository.GetUserCredentials(payload.Email);
             if (user == null) throw new HttpException(HttpStatusCode.NotFound, "User does not exist");
             if (user.Password != Encriptor.Encrypt(payload.Password)) throw new HttpException(HttpStatusCode.Unauthorized, "User or Password incorrect");
-            return true;
+            return user;
         }
 
         public ResponseUserDTO Create(CreateUserDTO UserPayload)
@@ -66,9 +66,9 @@ namespace picpay_challenge.Domain.Services
         }
 
 
-        public List<ResponseUserDTO>? FindMany()
+        public List<ResponseUserDTO>? FindMany(UserQuery query)
         {
-            return _userRepository.FindMany();
+            return _userRepository.FindMany(query);
         }
         public ResponseUserDTO? FindById(int id)
         {

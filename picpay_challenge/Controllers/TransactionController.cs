@@ -4,7 +4,9 @@ using picpay_challenge.Domain.DTOs.TransactionsDTOs;
 using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Services;
+using picpay_challenge.Helpers;
 using picpay_challenge.Middleware;
+using System.Net;
 using System.Security.Claims;
 
 namespace picpay_challenge.Controllers
@@ -25,65 +27,43 @@ namespace picpay_challenge.Controllers
         /// <summary>
         /// Lista todas as transações criadas, só deve ser permitido à administradores.
         /// </summary>
+        /// <param name="query">Parâmetros possíveis</param>
         /// <returns>Retorna a lista de todas as transações criadas.</returns>
         /// <response code="401">Caso o usuário não seja um administrador.</response>
         [HttpGet]
         [ProducesResponseType(typeof(ResponseTransactionDTO), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
         [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
-        public ActionResult<List<ResponseTransactionDTO>> GetTransactions([FromServices] UserService userService)
+        public ActionResult<List<ResponseTransactionDTO>> GetTransactions([FromServices] UserService userService, [FromQuery] TransactionQuery query)
         {
             ClaimsPrincipal currentUser = HttpContext.User;
-            string email = currentUser.FindFirst(ClaimTypes.Email)?.Value;
-            var user = userService.FindByEmail(email);
+            string? roleClaim = currentUser.FindFirst(ClaimTypes.Role)?.Value;
+            if (roleClaim == null)
+                return Unauthorized("Login to use the system.");
 
-            if (user.Email != email && user.Role != BaseUser.Roles.Admin) return Unauthorized("You can only see details of your own account");
 
-            return Ok(_transactionService.FindMany());
-        }
-        /// <summary>
-        /// Busca transação por id.
-        /// </summary>
-        /// <param name="transactionId">Id da transação.</param>
-        /// <param name="userService">Serviço de clientes para validar o usuário.</param>
-        /// <returns>Retorna a transação referida pelo id.</returns>
-        /// <response code="401">Caso o usuário não seja o autor da transação.</response>
-        /// <response code="404">Caso a transação não exista.</response>
-        /// <response code="401">Caso o usuário não seja um administrador.</response>
-        [HttpGet("{transactionId}")]
-        [ProducesResponseType(typeof(ResponseTransactionDTO), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
-        [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
-        public ActionResult<ResponseTransactionDTO> GetTransactionById([FromServices] UserService userService, int transactionId)
-        {
-            ClaimsPrincipal currentUser = HttpContext.User;
-            var email = currentUser.FindFirst(ClaimTypes.Email)?.Value;
-            if (email == null) return Unauthorized("Login to use the system");
+            BaseUser.Roles role = Enum.Parse<BaseUser.Roles>(roleClaim);
 
-            var user = userService.FindByEmail(email);
+            if (role != BaseUser.Roles.Admin) return Unauthorized("You can only see details of your own account");
 
-            if (user == null) return Unauthorized("You can only see details of your own account");
-
-            var transaction = _transactionService.FindById(transactionId, user.Id);
-            return Ok(transaction);
+            return Ok(_transactionService.FindMany(query));
         }
 
         /// <summary>
         /// Busca transações iniciadas pelo usuário.
         /// </summary>
-        /// <param name="userId">O ID do usuário pagante.</param>
         /// <returns>Retorna uma lista de transações do usuário.</returns>
-        [HttpGet("user/{userId:int}")]
+        [HttpGet("user/me")]
         [ProducesResponseType(typeof(List<ResponseTransactionDTO?>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
         [ProducesResponseType(typeof(DefaultErrorMessage), 404)]
-        public ActionResult<List<ResponseTransactionDTO?>?> GetUserTransactions([FromServices] UserService userService, [FromRoute] int userId)
+        public ActionResult<List<ResponseTransactionDTO?>?> GetUserTransactions()
         {
-            ClaimsPrincipal currentUser = HttpContext.User;
-            string email = currentUser.FindFirst(ClaimTypes.Email)?.Value;
-            var user = userService.FindById(userId);
+            var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
-            List<ResponseTransactionDTO?> transactionsList = _transactionService.GetUserTransactions(userService, userId, email);
+            if (currentUserId == null) return Unauthorized("Login to use the system.");
+
+            List<ResponseTransactionDTO?> transactionsList = _transactionService.GetUserTransactions(currentUserId);
 
             if (transactionsList.Count == 0) return NoContent();
             return Ok(transactionsList);
@@ -106,7 +86,15 @@ namespace picpay_challenge.Controllers
         [ProducesResponseType(typeof(DefaultErrorMessage), 401)]
         public async Task<ActionResult<ResponseTransactionDTO?>> MakePayment([FromServices] UserService userService, [FromBody] CreateTransactionDTO payload)
         {
+            ClaimsPrincipal currentUser = HttpContext.User;
 
+            string? roleClaim = currentUser.FindFirst(ClaimTypes.Role)?.Value;
+            if (roleClaim == null)
+                return Unauthorized("Login to use the system.");
+
+            BaseUser.Roles role = Enum.Parse<BaseUser.Roles>(roleClaim);
+
+            if (role != BaseUser.Roles.User) throw new HttpException(HttpStatusCode.Unauthorized, "Only regular users can pay transfers");
             var payment = await _transactionService.Create(userService, payload);
             if (payment == null) return BadRequest(payment);
             return Ok(payment);

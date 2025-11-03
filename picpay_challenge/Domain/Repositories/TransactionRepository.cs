@@ -4,6 +4,7 @@ using picpay_challenge.Domain.DTOs.TransactionsDTOs;
 using picpay_challenge.Domain.DTOs.UserDTOs;
 using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Models;
+using picpay_challenge.Helpers;
 using System.Net;
 
 namespace picpay_challenge.Repositories
@@ -19,9 +20,64 @@ namespace picpay_challenge.Repositories
                 _context = context;
             }
 
-            public List<ResponseTransactionDTO?>? FindMany()
+            public List<ResponseTransactionDTO> FindMany(TransactionQuery query)
             {
-                List<ResponseTransactionDTO>? transactions = _context.Transactions.Select(transaction =>
+
+                var transaction = _context.Transactions
+                    .Include(transaction => transaction.Payer)
+                    .Include(transaction => transaction.Payee)
+                    .AsQueryable();
+
+                if (query.Value != null)
+                {
+                    transaction = transaction.Where(transaction => transaction.Value == query.Value);
+                }
+                if (!string.IsNullOrWhiteSpace(query.ReceiverName))
+                {
+                    transaction = transaction.Where(transaction => transaction.Payee.FullName.Contains(query.ReceiverName));
+                }
+                if (!string.IsNullOrWhiteSpace(query.PayerName))
+                {
+                    transaction = transaction.Where(transaction => transaction.Payer.FullName.Contains(query.PayerName));
+                }
+                if (query.ReceiverId != null)
+                {
+                    transaction = transaction.Where(transaction => transaction.PayeeId == query.ReceiverId);
+                }
+                if (query.PayerId != null)
+                {
+                    transaction = transaction.Where(transaction => transaction.PayerId == query.PayerId);
+                }
+
+                if (query.CreatedAt != null)
+                {
+                    transaction = transaction.Where(transaction => transaction.StartedAt >= query.CreatedAt);
+                }
+                if (query.UpdatedAt != null)
+                {
+                    transaction = transaction.Where(transaction => transaction.ConfirmedAt >= query.UpdatedAt);
+                }
+                if (!string.IsNullOrWhiteSpace(query.SortBy))
+                {
+                    if (query.SortBy.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        transaction = query.IsDescending ? transaction.OrderByDescending(x => x.StartedAt) : transaction.OrderBy(x => x.StartedAt);
+                    }
+                    else if (query.SortBy.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase))
+                    {
+                        transaction = query.IsDescending ? transaction.OrderByDescending(x => x.ConfirmedAt) : transaction.OrderBy(x => x.ConfirmedAt);
+                    }
+                    else if (query.SortBy.Equals("Value", StringComparison.OrdinalIgnoreCase))
+                    {
+                        transaction = query.IsDescending ? transaction.OrderByDescending(x => x.Value) : transaction.OrderBy(x => x.Value);
+                    }
+
+                    else transaction = query.IsDescending ? transaction.OrderByDescending(x => x.Id) : transaction.OrderBy(x => x.Id);
+                }
+
+
+                return transaction.Skip((query.CurrentPage - 1) * query.PageCount).Take(query.PageCount).Select(
+                    transaction =>
                 new ResponseTransactionDTO()
                 {
                     Value = transaction.Value,
@@ -39,8 +95,7 @@ namespace picpay_challenge.Repositories
                     ConfirmedAt = transaction.ConfirmedAt,
                     Status = transaction.Status
                 }
-                ).ToList() ?? null;
-                return transactions;
+                    ).ToList();
             }
             public List<ResponseTransactionDTO?> FindByUserId(int UserId)
             {

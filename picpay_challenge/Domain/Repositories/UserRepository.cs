@@ -3,6 +3,7 @@ using picpay_challenge.Domain.DTOs.UserDTOs;
 using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Repositories.Interfaces;
+using picpay_challenge.Helpers;
 using System.Net;
 
 namespace picpay_challenge.Domain.Repositories
@@ -15,9 +16,65 @@ namespace picpay_challenge.Domain.Repositories
         {
             _context = context;
         }
-        public List<ResponseUserDTO>? FindMany()
+        public List<ResponseUserDTO>? FindMany(UserQuery query)
         {
-            List<ResponseUserDTO>? users = _context.Users.Select(user =>
+            var users = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.FullName))
+            {
+                users = users.Where(user => user.FullName.Contains(query.FullName));
+            }
+            if (!string.IsNullOrWhiteSpace(query.CPF))
+            {
+                users = users.Where(user => user.CPF.Contains(query.CPF));
+            }
+            if (!string.IsNullOrWhiteSpace(query.CNPJ))
+            {
+                users = users.Where(user => user.CNPJ.Contains(query.CNPJ));
+            }
+            if (query.Id != null)
+            {
+                users = users.Where(user => user.Id == query.Id);
+            }
+            if (!string.IsNullOrWhiteSpace(query.Email))
+            {
+                users = users.Where(user => user.Email.Contains(query.Email));
+            }
+            if (query.Role != null)
+            {
+                users = users.Where(user => user.Role == query.Role);
+            }
+
+            if (query.CreatedAt != null)
+            {
+                users = users.Where(user => user.CreateAt >= query.CreatedAt);
+            }
+            if (query.UpdatedAt != null)
+            {
+                users = users.Where(user => user.UpdatedAt >= query.UpdatedAt);
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.SortBy))
+            {
+                if (query.SortBy.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase))
+                {
+                    users = query.IsDescending ? users.OrderByDescending(x => x.CreateAt) : users.OrderBy(x => x.CreateAt);
+                }
+                else if (query.SortBy.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase))
+                {
+                    users = query.IsDescending ? users.OrderByDescending(x => x.UpdatedAt) : users.OrderBy(x => x.UpdatedAt);
+                }
+                else if (query.SortBy.Equals("FullName", StringComparison.OrdinalIgnoreCase))
+                {
+                    users = query.IsDescending ? users.OrderByDescending(x => x.FullName) : users.OrderBy(x => x.FullName);
+                }
+
+                else users = query.IsDescending ? users.OrderByDescending(x => x.Id) : users.OrderBy(x => x.Id);
+            }
+
+            users = users.Where(user => user.IsActive == query.IsActive);
+
+            return users.Skip((query.CurrentPage - 1) * query.PageCount).Take(query.PageCount).Select(user =>
              new ResponseUserDTO
              {
                  Id = user.Id,
@@ -30,7 +87,7 @@ namespace picpay_challenge.Domain.Repositories
                  StoreName = user.StoreName,
              }
             ).ToList();
-            return users ?? null;
+
         }
         public ResponseUserDTO? FindById(int id)
         {
