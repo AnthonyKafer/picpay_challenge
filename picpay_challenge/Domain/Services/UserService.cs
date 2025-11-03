@@ -1,12 +1,14 @@
-using System.Text.RegularExpressions;
 using picpay_challenge.Domain.DTOs.UserDTOs;
+using picpay_challenge.Domain.Exceptions;
+using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Repositories;
 using picpay_challenge.Domain.Services.Interfaces;
-using picpay_challenge.Domain.Models;
+using picpay_challenge.Helpers;
+using System.Net;
 
 namespace picpay_challenge.Domain.Services
 {
-    public class UserService : IServiceInterface<BaseUser>
+    public class UserService
     {
         private readonly UserRepository _userRepository;
 
@@ -18,47 +20,65 @@ namespace picpay_challenge.Domain.Services
         public bool ValidadateUserCredentials(LoginUserDTO payload)
         {
             var user = _userRepository.GetUserCredentials(payload.Email);
-            if (user == null) return false;
-            if (user.Password != payload.Password) return false;
+            if (user == null) throw new HttpException(HttpStatusCode.NotFound, "User does not exist");
+            if (user.Password != Encriptor.Encrypt(payload.Password)) throw new HttpException(HttpStatusCode.Unauthorized, "User or Password incorrect");
             return true;
         }
 
-        public BaseUser Create(CreateUserDTO UserPayload)
+        public ResponseUserDTO Create(CreateUserDTO UserPayload)
         {
 
             bool isStorekeeper = UserPayload.CNPJ != null && UserPayload.StoreName != null;
-
             var payload = new BaseUser
             {
                 FullName = UserPayload.FullName,
                 Email = UserPayload.Email,
-                Password = UserPayload.Password,
-                CPF = UserPayload.CPF,
+                Password = Encriptor.Encrypt(UserPayload.Password),
+                CPF = Sanitizer.OnlyDigits(UserPayload.CPF),
                 CreateAt = DateTime.UtcNow,
                 UpdatedAt = null,
                 IsActive = true,
                 Balance = UserPayload.Balance,
-                CNPJ = isStorekeeper ? UserPayload.CNPJ : null,
+                CNPJ = isStorekeeper ? Sanitizer.OnlyDigits(UserPayload.CNPJ) : null,
                 StoreName = isStorekeeper ? UserPayload.StoreName : null,
-                UserType = isStorekeeper ? BaseUser.UserTypes.Storekeeper : BaseUser.UserTypes.User
+                Role = isStorekeeper ? BaseUser.Roles.Storekeeper : BaseUser.Roles.User
 
             };
             return _userRepository.Create(payload);
         }
-        public void ChangeUserBalance(int Id, decimal value)
+        public ResponseUserDTO CreateAdmin(CreateUserDTO UserPayload)
         {
-            _userRepository.ChangeUserBalance(Id, value);
-            return;
+            var payload = new BaseUser
+            {
+                FullName = UserPayload.FullName,
+                Email = UserPayload.Email,
+                Password = Encriptor.Encrypt(UserPayload.Password),
+                CPF = Sanitizer.OnlyDigits(UserPayload.CPF),
+                CreateAt = DateTime.UtcNow,
+                UpdatedAt = null,
+                IsActive = true,
+                Balance = 0,
+                CNPJ = null,
+                StoreName = null,
+                Role = BaseUser.Roles.Admin
+            };
+            return _userRepository.Create(payload);
         }
-        public List<BaseUser>? FindMany()
+
+
+        public List<ResponseUserDTO>? FindMany()
         {
             return _userRepository.FindMany();
         }
-        public BaseUser? FindById(int id)
+        public ResponseUserDTO? FindById(int id)
         {
             return _userRepository.FindById(id);
         }
-        public BaseUser? Delete(int id)
+        public BaseUser? FindByEmail(string email)
+        {
+            return _userRepository.GetUserCredentials(email);
+        }
+        public ResponseUserDTO? Delete(int id)
         {
             return _userRepository.Delete(id);
         }

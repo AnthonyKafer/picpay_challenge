@@ -5,7 +5,9 @@ using picpay_challenge.Domain.Data;
 using picpay_challenge.Domain.Integrations;
 using picpay_challenge.Domain.Repositories;
 using picpay_challenge.Domain.Services;
+using picpay_challenge.Middleware;
 using picpay_challenge.Repositories.picpay_challenge.Repositories;
+using System.Reflection;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +36,9 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
     };
 });
+
+builder.Services.AddTransient<GlobalExeceptionHandlingMiddleware>();
+
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.NumberHandling =
@@ -44,15 +49,22 @@ builder.Services.AddAuthorization();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(swagger =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    swagger.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+});
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<TransactionRepository>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddSingleton<AuthService>();
 builder.Services.AddHttpClient<PaymentExternalAuthorizor>();
+builder.Services.AddHttpClient<NotificationExternal>();
 
 var app = builder.Build();
+app.UseMiddleware<GlobalExeceptionHandlingMiddleware>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

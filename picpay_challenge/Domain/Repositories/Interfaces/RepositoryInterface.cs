@@ -5,7 +5,6 @@ namespace picpay_challenge.Domain.Repositories.Interfaces
     {
         List<DTO>? FindMany();
         DTO? FindById(int Id);
-        DTO Create(DTO payload);
 
 
     }

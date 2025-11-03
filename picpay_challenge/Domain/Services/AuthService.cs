@@ -1,10 +1,8 @@
 
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-
 namespace picpay_challenge.Domain.Services
 {
     public class AuthService
@@ -22,7 +20,7 @@ namespace picpay_challenge.Domain.Services
         {
             var claims = new[]
       {
-            new Claim(JwtRegisteredClaimNames.Sub, Email),
+            new Claim(JwtRegisteredClaimNames.Email, Email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secret));

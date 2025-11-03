@@ -7,13 +7,14 @@ namespace picpay_challenge.Domain.Models
     {
 
         public int Id { get; set; }
-        public enum UserTypes
+        public enum Roles
         {
+            Admin,
             User,
             Storekeeper
         }
         [Required]
-        public UserTypes UserType { get; set; }
+        public Roles Role { get; set; }
 
         [Required]
         public string FullName { get; set; } = null!;

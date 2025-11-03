@@ -23,9 +23,8 @@ namespace picpay_challenge.Domain.Data
                 .IsUnique();
 
             modelBuilder.Entity<BaseUser>()
-           .Property(u => u.UserType)
-           .HasConversion<int>()
-           .HasColumnType("int");
+           .Property(u => u.Role)
+           .HasConversion<string>();
 
             modelBuilder.Entity<BaseUser>()
                 .HasIndex(u => u.CNPJ)

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using picpay_challenge.Domain.DTOs.UserDTOs;
+using picpay_challenge.Domain.Models;
 using picpay_challenge.Domain.Services;
 using picpay_challenge.Helpers;
 using System.Security.Claims;
@@ -19,11 +20,11 @@ namespace picpay_challenge.Controllers
             _userService = userService;
         }
         [HttpPost("create-account")]
-        public IActionResult CreateUser([FromBody] CreateUserDTO UserPayload)
+        public ActionResult<ResponseUserDTO> CreateUser([FromBody] CreateUserDTO UserPayload)
         {
             bool isValidEmail = Validator.IsValidEmail(UserPayload.Email);
             bool isValidCPF = Validator.IsValidCPF(UserPayload.CPF);
-            bool isValidCNPJ = Validator.IsValidCNPJ(UserPayload.CNPJ == "" || UserPayload.CNPJ == null ? null : UserPayload.CNPJ);
+            bool isValidCNPJ = UserPayload.CNPJ == "" || UserPayload.CNPJ == null ? true : Validator.IsValidCNPJ(UserPayload.CNPJ);
 
             bool isValidBalance = UserPayload.Balance > 0;
 
@@ -38,8 +39,17 @@ namespace picpay_challenge.Controllers
 
             return Ok(newUserRegistry);
         }
+        [HttpPost("create-admin")]
+        public ActionResult<ResponseUserDTO> CreateAdmin([FromBody] CreateUserDTO UserPayload)
+        {
+            bool isValidCPF = Validator.IsValidCPF(UserPayload.CPF);
+            if (!isValidCPF) return BadRequest("Invalid fields");
+            var newUserRegistry = _userService.CreateAdmin(UserPayload);
+
+            return Ok(newUserRegistry);
+        }
         [HttpPost("login")]
-        public IActionResult Login([FromServices] AuthService authService, [FromBody] LoginUserDTO loginPayload)
+        public ActionResult Login([FromServices] AuthService authService, [FromBody] LoginUserDTO loginPayload)
         {
             if (!_userService.ValidadateUserCredentials(loginPayload)) return Unauthorized();
 
@@ -50,23 +60,27 @@ namespace picpay_challenge.Controllers
 
         [Authorize]
         [HttpGet("/user/{id}")]
-        public IActionResult GetUser(int id)
+        public ActionResult<ResponseUserDTO> GetUser(int id)
         {
             var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
             var user = _userService.FindById(id);
 
             if (user == null) return NotFound();
-            if (user.Email != currentUserEmail) return Unauthorized("You can only see details of your own account");
+            if (user.Email != currentUserEmail && user.Role != BaseUser.Roles.Admin) return Unauthorized("You can only see details of your own account");
             return Ok(user);
 
         }
         [Authorize]
         [HttpDelete("/user/delete/{id}")]
-        public IActionResult DeleteUser(string id)
+        public ActionResult<ResponseUserDTO> DeleteUser(string id)
         {
-            var user = _userService.Delete(int.Parse(id));
+            var currentUserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            var user = _userService.FindById(int.Parse(id));
             if (user == null) return NotFound();
-            return Ok(new { Message = "Sucessfully deleted!" });
+            if (user.Email != currentUserEmail && user.Role != BaseUser.Roles.Admin) return Unauthorized("You can only delete your own account");
+            var res = _userService.Delete(int.Parse(id));
+
+            return Ok(res);
 
         }
     }
