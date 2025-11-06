@@ -1,12 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace picpay_challenge.Domain.Models
+namespace picpay_challenge.Domain.Models.User
 {
-    public class BaseUser
+    public class BaseUser : EntityBase
     {
 
-        public int Id { get; set; }
         public enum Roles
         {
             Admin,
@@ -24,9 +23,6 @@ namespace picpay_challenge.Domain.Models
         public string Password { get; set; } = null!;
         [Required]
         public string CPF { get; set; } = null!;
-        [Required]
-        public DateTime CreateAt { get; set; } = DateTime.Now!;
-        public DateTime? UpdatedAt { get; set; }
         [Required]
         public bool IsActive { get; set; } = true;
 

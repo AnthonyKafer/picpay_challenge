@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace picpay_challenge.Domain.DTOs.UserDTOs
 {
-    public class UpdateUserResponseDTO : ResponseUserDTO
+    public class UpdateUserResponseDTO : ResponseSingleUserDTO
     {
         public DateTime UpdatedAt = DateTime.UtcNow;
     }

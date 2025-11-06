@@ -1,10 +1,10 @@
 
 using Microsoft.IdentityModel.Tokens;
-using picpay_challenge.Domain.Models;
+using picpay_challenge.Domain.Models.User;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using static picpay_challenge.Domain.Models.BaseUser;
+using static picpay_challenge.Domain.Models.User.BaseUser;
 namespace picpay_challenge.Domain.Services
 {
     public class AuthService

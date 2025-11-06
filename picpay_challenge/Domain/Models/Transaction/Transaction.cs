@@ -1,10 +1,10 @@
+using picpay_challenge.Domain.Models.User;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-namespace picpay_challenge.Domain.Models
+namespace picpay_challenge.Domain.Models.Transaction
 {
-    public class Transaction
+    public class Transaction : EntityBase
     {
-        public int Id { get; set; }
         [Column(TypeName = "numeric(18,5)")]
         public decimal Value { get; set; }
 
@@ -14,8 +14,6 @@ namespace picpay_challenge.Domain.Models
         public int PayeeId { get; set; }
         [ForeignKey(nameof(PayeeId))] public BaseUser Payee { get; set; } = null!;
 
-        public DateTime StartedAt { get; set; }
-        public DateTime? ConfirmedAt { get; set; }
         public enum StatusTypes
         {
             Pending,
@@ -25,6 +23,6 @@ namespace picpay_challenge.Domain.Models
         }
         [Required]
         public StatusTypes Status { get; set; } = StatusTypes.Pending;
-
     }
+
 }

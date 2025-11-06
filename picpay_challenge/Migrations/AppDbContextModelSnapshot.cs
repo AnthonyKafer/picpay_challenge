@@ -22,7 +22,43 @@ namespace picpay_challenge.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("picpay_challenge.Domain.Models.BaseUser", b =>
+            modelBuilder.Entity("picpay_challenge.Domain.Models.Transaction.Transaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PayeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PayerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("numeric(18,5)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PayeeId");
+
+                    b.HasIndex("PayerId");
+
+                    b.ToTable("Transactions");
+                });
+
+            modelBuilder.Entity("picpay_challenge.Domain.Models.User.BaseUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -40,7 +76,7 @@ namespace picpay_challenge.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("CreateAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
@@ -82,50 +118,15 @@ namespace picpay_challenge.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("picpay_challenge.Domain.Models.Transaction", b =>
+            modelBuilder.Entity("picpay_challenge.Domain.Models.Transaction.Transaction", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("ConfirmedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("PayeeId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PayerId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("Value")
-                        .HasColumnType("numeric(18,5)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PayeeId");
-
-                    b.HasIndex("PayerId");
-
-                    b.ToTable("Transactions");
-                });
-
-            modelBuilder.Entity("picpay_challenge.Domain.Models.Transaction", b =>
-                {
-                    b.HasOne("picpay_challenge.Domain.Models.BaseUser", "Payee")
+                    b.HasOne("picpay_challenge.Domain.Models.User.BaseUser", "Payee")
                         .WithMany()
                         .HasForeignKey("PayeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("picpay_challenge.Domain.Models.BaseUser", "Payer")
+                    b.HasOne("picpay_challenge.Domain.Models.User.BaseUser", "Payer")
                         .WithMany()
                         .HasForeignKey("PayerId")
                         .OnDelete(DeleteBehavior.Restrict)

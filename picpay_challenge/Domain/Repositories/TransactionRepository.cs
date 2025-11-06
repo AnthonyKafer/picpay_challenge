@@ -1,156 +1,71 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using picpay_challenge.Domain.Data;
+using picpay_challenge.Domain.DTOs;
 using picpay_challenge.Domain.DTOs.TransactionsDTOs;
-using picpay_challenge.Domain.DTOs.UserDTOs;
-using picpay_challenge.Domain.Exceptions;
-using picpay_challenge.Domain.Models;
+using picpay_challenge.Domain.Mappers.UserMappers;
+using picpay_challenge.Domain.Models.Transaction;
 using picpay_challenge.Helpers;
-using System.Net;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace picpay_challenge.Repositories
 {
     namespace picpay_challenge.Repositories
     {
-        public class TransactionRepository
+        public class TransactionRepository : RepositoryBase<Transaction, TransactionQuery>
         {
             private readonly AppDbContext _context;
+            protected readonly DbSet<Transaction> _dbSet;
 
-            public TransactionRepository(AppDbContext context)
+
+            public TransactionRepository(AppDbContext context) : base(context)
             {
                 _context = context;
+                _dbSet = context.Set<Transaction>();
+
             }
-
-            public List<ResponseTransactionDTO> FindMany(TransactionQuery query)
+            public async Task<BaseResponse<Transaction>> FindByUserId(TransactionQuery filter, int userId)
             {
+                IQueryable<Transaction> query = _dbSet;
+                int total = (int)Math.Ceiling(Convert.ToDecimal(query.Count()) / Convert.ToDecimal(filter.PageCount));
 
-                var transaction = _context.Transactions
-                    .Include(transaction => transaction.Payer)
-                    .Include(transaction => transaction.Payee)
-                    .AsQueryable();
+                query = query.Where(x => x.PayerId == userId);
+                List<Transaction> data = await base.ApplyOrdering(ApplyFilter(query, filter), filter)
+                    .Include(x => x.Payee)
+                    .Include(x => x.Payer)
+                    .Skip((filter.CurrentPage - 1) * filter.PageCount)
+                    .Take(filter.PageCount)
+                    .ToListAsync();
 
-                if (query.Value != null)
+                base.ApplyOrdering(query, filter);
+                return new BaseResponse<Transaction>()
                 {
-                    transaction = transaction.Where(transaction => transaction.Value == query.Value);
-                }
-                if (!string.IsNullOrWhiteSpace(query.ReceiverName))
-                {
-                    transaction = transaction.Where(transaction => transaction.Payee.FullName.Contains(query.ReceiverName));
-                }
-                if (!string.IsNullOrWhiteSpace(query.PayerName))
-                {
-                    transaction = transaction.Where(transaction => transaction.Payer.FullName.Contains(query.PayerName));
-                }
-                if (query.ReceiverId != null)
-                {
-                    transaction = transaction.Where(transaction => transaction.PayeeId == query.ReceiverId);
-                }
-                if (query.PayerId != null)
-                {
-                    transaction = transaction.Where(transaction => transaction.PayerId == query.PayerId);
-                }
-
-                if (query.CreatedAt != null)
-                {
-                    transaction = transaction.Where(transaction => transaction.StartedAt >= query.CreatedAt);
-                }
-                if (query.UpdatedAt != null)
-                {
-                    transaction = transaction.Where(transaction => transaction.ConfirmedAt >= query.UpdatedAt);
-                }
-                if (!string.IsNullOrWhiteSpace(query.SortBy))
-                {
-                    if (query.SortBy.Equals("CreatedAt", StringComparison.OrdinalIgnoreCase))
-                    {
-                        transaction = query.IsDescending ? transaction.OrderByDescending(x => x.StartedAt) : transaction.OrderBy(x => x.StartedAt);
-                    }
-                    else if (query.SortBy.Equals("UpdatedAt", StringComparison.OrdinalIgnoreCase))
-                    {
-                        transaction = query.IsDescending ? transaction.OrderByDescending(x => x.ConfirmedAt) : transaction.OrderBy(x => x.ConfirmedAt);
-                    }
-                    else if (query.SortBy.Equals("Value", StringComparison.OrdinalIgnoreCase))
-                    {
-                        transaction = query.IsDescending ? transaction.OrderByDescending(x => x.Value) : transaction.OrderBy(x => x.Value);
-                    }
-
-                    else transaction = query.IsDescending ? transaction.OrderByDescending(x => x.Id) : transaction.OrderBy(x => x.Id);
-                }
-
-
-                return transaction.Skip((query.CurrentPage - 1) * query.PageCount).Take(query.PageCount).Select(
-                    transaction =>
-                new ResponseTransactionDTO()
-                {
-                    Value = transaction.Value,
-                    Payer = new PayerAndPayee()
-                    {
-                        FullName = transaction.Payer.FullName,
-                        Id = transaction.Payer.Id
-                    },
-                    Payee = new PayerAndPayee()
-                    {
-                        FullName = transaction.Payee.FullName,
-                        Id = transaction.Payee.Id
-                    },
-                    StartedAt = transaction.StartedAt,
-                    ConfirmedAt = transaction.ConfirmedAt,
-                    Status = transaction.Status
-                }
-                    ).ToList();
-            }
-            public List<ResponseTransactionDTO?> FindByUserId(int UserId)
-            {
-                List<ResponseTransactionDTO>? transactions = _context.Transactions
-                    .Select(transaction =>
-                new ResponseTransactionDTO()
-                {
-                    Value = transaction.Value,
-                    Payer = new PayerAndPayee()
-                    {
-                        FullName = transaction.Payer.FullName,
-                        Id = transaction.Payer.Id
-                    },
-                    Payee = new PayerAndPayee()
-                    {
-                        FullName = transaction.Payee.FullName,
-                        Id = transaction.Payee.Id
-                    },
-                    StartedAt = transaction.StartedAt,
-                    ConfirmedAt = transaction.ConfirmedAt,
-                    Status = transaction.Status
-                }
-                )
-                 .Where(x => x.Payer.Id == UserId).ToList() ?? null;
-                if (transactions == null) return null;
-                return transactions;
-            }
-
-            public ResponseTransactionDTO? FindById(int Id, int userId)
-            {
-                var transaction = _context.Transactions
-                    .Include(transaction => transaction.Payee)
-                    .Include(transaction => transaction.Payer)
-                    .FirstOrDefault(x => x.Id == Id && x.PayerId == userId) ?? null;
-
-                if (transaction == null) throw new HttpException(HttpStatusCode.NotFound, "Transaction not found");
-                return new ResponseTransactionDTO()
-                {
-                    Payer = new PayerAndPayee()
-                    {
-                        FullName = transaction.Payer.FullName,
-                        Id = transaction.Payer.Id
-                    },
-                    Payee = new PayerAndPayee()
-                    {
-                        FullName = transaction.Payee.FullName,
-                        Id = transaction.Payee.Id
-                    },
-                    Value = transaction.Value,
-                    ConfirmedAt = transaction.ConfirmedAt,
-                    StartedAt = transaction.StartedAt,
-                    Status = transaction.Status
+                    Data = data,
+                    CurrentPage = filter.CurrentPage,
+                    TotalPages = total == 0 ? 1 : total,
                 };
             }
-            public async Task<ResponseTransactionDTO?> Create(Transaction payload, int payerId, int payeeId)
+
+            override public async Task<BaseResponse<Transaction>> GetAllAsync(TransactionQuery filter)
+            {
+                IQueryable<Transaction> query = _dbSet;
+                int total = (int)Math.Ceiling(Convert.ToDecimal(query.Count()) / Convert.ToDecimal(filter.PageCount));
+
+                List<Transaction> data = await base.ApplyOrdering(ApplyFilter(query, filter), filter)
+                    .Include(x => x.Payee)
+                    .Include(x => x.Payer)
+                    .Skip((filter.CurrentPage - 1) * filter.PageCount)
+                    .Take(filter.PageCount)
+                    .ToListAsync();
+                return new BaseResponse<Transaction>()
+                {
+                    Data = data,
+                    CurrentPage = filter.CurrentPage,
+                    TotalPages = total == 0 ? 1 : total,
+                };
+            }
+            public async Task<ResponseSingleTransactionDTO?> AddAsync(Transaction payload, int payerId, int PayeeId)
             {
                 var transactionDb = _context.Database.BeginTransaction();
                 try
@@ -158,14 +73,13 @@ namespace picpay_challenge.Repositories
                     var payer = _context.Users.FirstOrDefault(x => x.Id == payerId);
                     payer.Balance -= payload.Value;
 
-                    var payee = _context.Users.FirstOrDefault(x => x.Id == payeeId);
+                    var payee = _context.Users.FirstOrDefault(x => x.Id == PayeeId);
                     payee.Balance += payload.Value;
 
-                    var payment = _context.Transactions.Add(payload);
+                    var payment = await _context.Transactions.AddAsync(payload);
                     await _context.SaveChangesAsync();
                     await transactionDb.CommitAsync();
-
-                    return new ResponseTransactionDTO()
+                    return new ResponseSingleTransactionDTO()
                     {
                         Payer = new PayerAndPayee()
                         {
@@ -178,19 +92,52 @@ namespace picpay_challenge.Repositories
                             Id = payee.Id
                         },
                         Value = payload.Value,
-                        ConfirmedAt = DateTime.Now,
-                        StartedAt = payload.StartedAt,
+                        CreatedAt = payload.CreatedAt,
+                        UpdatedAt = payload.UpdatedAt,
                         Status = Transaction.StatusTypes.Approved
                     };
 
                 }
-                catch (Exception ex)
+                catch
                 {
                     await transactionDb.RollbackAsync();
-                    throw new HttpException(HttpStatusCode.InternalServerError, "Something went wrong at registering the transaction, try again later");
+                    throw;
+                }
+            }
+            public override IQueryable<Transaction> ApplyFilter(IQueryable<Transaction> query, TransactionQuery filter)
+            {
+                query = query.Include(x => x.Payee);
+                query = query.Include(x => x.Payer);
+
+                base.ApplyFilter(query, filter);
+                if (!String.IsNullOrEmpty(filter.PayerName))
+                {
+                    query = query.Where(transaction => transaction.Payer.FullName.Contains(filter.PayerName!));
                 }
 
+                if (!String.IsNullOrEmpty(filter.ReceiverName))
+                {
+                    query = query.Where(transaction => transaction.Payee.FullName.Contains(filter.ReceiverName!));
+                }
+                if (filter.Value.HasValue)
+                {
+                    query = query.Where(transaction => transaction.Value == filter.Value);
+                }
+                if (filter.PayerId.HasValue)
+                {
+                    query = query.Where(transaction => transaction.PayerId == filter.PayerId);
+                }
+                if (filter.ReceiverId.HasValue)
+                {
+                    query = query.Where(transaction => transaction.PayeeId == filter.ReceiverId);
+                }
+
+                return query;
+
+
             }
+
+
 
         }
 

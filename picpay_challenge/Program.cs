@@ -1,8 +1,11 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using picpay_challenge.Domain.Data;
 using picpay_challenge.Domain.Integrations;
+using picpay_challenge.Domain.Mappers.UserMappers;
 using picpay_challenge.Domain.Repositories;
 using picpay_challenge.Domain.Services;
 using picpay_challenge.Middleware;
@@ -17,7 +20,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
 });
+
 var key = builder.Configuration["Jwt:key"];
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -63,9 +68,12 @@ builder.Services.AddSingleton<AuthService>();
 builder.Services.AddHttpClient<PaymentExternalAuthorizor>();
 builder.Services.AddHttpClient<NotificationExternal>();
 
+builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+
 var app = builder.Build();
 app.UseMiddleware<GlobalExeceptionHandlingMiddleware>();
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

@@ -1,8 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using picpay_challenge.Domain.DTOs;
 using picpay_challenge.Domain.DTOs.TransactionsDTOs;
 using picpay_challenge.Domain.Exceptions;
 using picpay_challenge.Domain.Integrations;
-using picpay_challenge.Domain.Models;
+using picpay_challenge.Domain.Mappers.UserMappers;
+using picpay_challenge.Domain.Models.Transaction;
 using picpay_challenge.Helpers;
 using picpay_challenge.Repositories.picpay_challenge.Repositories;
 using System.Net;
@@ -14,17 +17,23 @@ namespace picpay_challenge.Domain.Services
         private readonly TransactionRepository _transactionRepository;
         private readonly PaymentExternalAuthorizor _paymentExternalAuthorizor;
         private readonly NotificationExternal _notificationExternal;
-        public TransactionService(TransactionRepository userRepository, PaymentExternalAuthorizor paymentExternalAuthorizor, NotificationExternal notificationExternal)
+        private readonly IMapper _mapper;
+        public TransactionService(TransactionRepository transactionRepository,
+            PaymentExternalAuthorizor paymentExternalAuthorizor,
+            NotificationExternal notificationExternal,
+            IMapper mapper
+            )
         {
-            _transactionRepository = userRepository;
+            _transactionRepository = transactionRepository;
             _paymentExternalAuthorizor = paymentExternalAuthorizor;
             _notificationExternal = notificationExternal;
+            _mapper = mapper;
 
         }
-        public async Task<ResponseTransactionDTO?> Create([FromServices] UserService userService, CreateTransactionDTO payload)
+        public async Task<ResponseSingleTransactionDTO?> Create([FromServices] UserService userService, CreateTransactionDTO payload, int payerId)
         {
-            var payer = userService.FindById(payload.PayerId) ?? null;
-            var payee = userService.FindById(payload.PayeeId) ?? null;
+            var payer = await userService.FindById(payerId) ?? null;
+            var payee = await userService.FindById(payload.PayeeId) ?? null;
             if (payer == null || payee == null) throw new HttpException(HttpStatusCode.NotFound, "Either payer or payee do not exist");
 
 
@@ -41,32 +50,35 @@ namespace picpay_challenge.Domain.Services
             Transaction transaction = new Transaction()
             {
                 PayeeId = payload.PayeeId,
-                PayerId = payload.PayerId,
+                PayerId = payerId,
                 Value = payload.Value,
-                StartedAt = proccessStart,
-                ConfirmedAt = DateTime.UtcNow,
+                CreatedAt = proccessStart,
+                UpdatedAt = DateTime.UtcNow,
                 Status = Transaction.StatusTypes.Approved
             };
-            var payment = await _transactionRepository.Create(transaction, payer.Id, payee.Id);
+            var payment = await _transactionRepository.AddAsync(transaction, payer.Id, payee.Id);
 
             if (payment == null) throw new HttpException(HttpStatusCode.InternalServerError, "Something went wrong while registering the payment");
 
             await _notificationExternal.SendConfirmNotification();
 
-            return payment;
+            return _mapper.Map<ResponseSingleTransactionDTO>(payment);
         }
-        public List<ResponseTransactionDTO?> GetUserTransactions(int id)
+        public async Task<ResponseListTransactionDTO> GetUserTransactions(TransactionQuery query, int id)
         {
-            return _transactionRepository.FindByUserId(id);
+            var userTransactions = await _transactionRepository.FindByUserId(query, id);
+            return _mapper.Map<ResponseListTransactionDTO>(userTransactions);
         }
-        public List<ResponseTransactionDTO?>? FindMany(TransactionQuery query)
+        public async Task<ResponseListTransactionDTO> FindMany(TransactionQuery query)
         {
-            return _transactionRepository.FindMany(query);
+            var transactions = await _transactionRepository.GetAllAsync(query);
+            return _mapper.Map<ResponseListTransactionDTO>(transactions);
         }
 
-        public ResponseTransactionDTO? FindById(int id, int userId)
+        public async Task<Transaction?> FindById(int id)
         {
-            return _transactionRepository.FindById(id, userId);
+            var transaction = await _transactionRepository.GetByIdAsync(id);
+            return _mapper.Map<Transaction>(transaction);
         }
 
     }

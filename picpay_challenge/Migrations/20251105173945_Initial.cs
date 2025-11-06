@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace picpay_challenge.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class Initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -18,17 +18,17 @@ namespace picpay_challenge.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserType = table.Column<int>(type: "int", nullable: false),
+                    Role = table.Column<string>(type: "text", nullable: false),
                     FullName = table.Column<string>(type: "text", nullable: false),
                     Email = table.Column<string>(type: "text", nullable: false),
                     Password = table.Column<string>(type: "text", nullable: false),
                     CPF = table.Column<string>(type: "text", nullable: false),
-                    CreateAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     Balance = table.Column<decimal>(type: "numeric(18,5)", nullable: false),
                     CNPJ = table.Column<string>(type: "text", nullable: true),
-                    StoreName = table.Column<string>(type: "text", nullable: true)
+                    StoreName = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -44,9 +44,9 @@ namespace picpay_challenge.Migrations
                     Value = table.Column<decimal>(type: "numeric(18,5)", nullable: false),
                     PayerId = table.Column<int>(type: "integer", nullable: false),
                     PayeeId = table.Column<int>(type: "integer", nullable: false),
-                    StartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ConfirmedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false)
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {

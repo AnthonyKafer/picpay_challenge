@@ -1,46 +1,19 @@
 using Microsoft.EntityFrameworkCore;
-using picpay_challenge.Domain.Models;
+using picpay_challenge.Domain.Models.Transaction;
+using picpay_challenge.Domain.Models.User;
 
 namespace picpay_challenge.Domain.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
-
         public DbSet<BaseUser> Users => Set<BaseUser>();
         public DbSet<Transaction> Transactions => Set<Transaction>();
 
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<BaseUser>()
-                .HasIndex(u => u.Email)
-                .IsUnique();
-
-            modelBuilder.Entity<BaseUser>()
-                .HasIndex(u => u.CPF)
-                .IsUnique();
-
-            modelBuilder.Entity<BaseUser>()
-           .Property(u => u.Role)
-           .HasConversion<string>();
-
-            modelBuilder.Entity<BaseUser>()
-                .HasIndex(u => u.CNPJ)
-                .IsUnique();
-
-            modelBuilder.Entity<Transaction>()
-                .HasOne(t => t.Payer)
-                .WithMany()
-                .HasForeignKey(t => t.PayerId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<Transaction>()
-                .HasOne(t => t.Payee)
-                .WithMany()
-                .HasForeignKey(t => t.PayeeId)
-                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
         }
     }
 }

@@ -1,9 +1,9 @@
-﻿using picpay_challenge.Domain.Models;
+﻿using picpay_challenge.Domain.Models.User;
 using System.ComponentModel.DataAnnotations;
 
 namespace picpay_challenge.Domain.DTOs.UserDTOs
 {
-    public class ResponseUserDTO
+    public class ResponseSingleUserDTO
     {
         public int Id { get; set; }
         public string FullName { get; set; } = null!;
@@ -14,4 +14,6 @@ namespace picpay_challenge.Domain.DTOs.UserDTOs
         public string? CNPJ { get; set; }
         public string? StoreName { get; set; }
     }
+
+    public class ResponseListUserDTO : BaseResponse<ResponseSingleUserDTO> { }
 }

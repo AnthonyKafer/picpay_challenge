@@ -7,14 +7,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using picpay_challenge.Domain.Data;
 
-
 #nullable disable
 
 namespace picpay_challenge.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251029163902_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251105173945_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -26,7 +25,43 @@ namespace picpay_challenge.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("PicPayChallenge.Models.BaseUser", b =>
+            modelBuilder.Entity("picpay_challenge.Domain.Models.Transaction.Transaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PayeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PayerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Value")
+                        .HasColumnType("numeric(18,5)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PayeeId");
+
+                    b.HasIndex("PayerId");
+
+                    b.ToTable("Transactions");
+                });
+
+            modelBuilder.Entity("picpay_challenge.Domain.Models.User.BaseUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -44,7 +79,7 @@ namespace picpay_challenge.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("CreateAt")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
@@ -62,14 +97,15 @@ namespace picpay_challenge.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("StoreName")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("UserType")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -85,50 +121,15 @@ namespace picpay_challenge.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("PicPayChallenge.Models.Transaction", b =>
+            modelBuilder.Entity("picpay_challenge.Domain.Models.Transaction.Transaction", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("ConfirmedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("PayeeId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("PayerId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("Value")
-                        .HasColumnType("numeric(18,5)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PayeeId");
-
-                    b.HasIndex("PayerId");
-
-                    b.ToTable("Transactions");
-                });
-
-            modelBuilder.Entity("PicPayChallenge.Models.Transaction", b =>
-                {
-                    b.HasOne("PicPayChallenge.Models.BaseUser", "Payee")
+                    b.HasOne("picpay_challenge.Domain.Models.User.BaseUser", "Payee")
                         .WithMany()
                         .HasForeignKey("PayeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("PicPayChallenge.Models.BaseUser", "Payer")
+                    b.HasOne("picpay_challenge.Domain.Models.User.BaseUser", "Payer")
                         .WithMany()
                         .HasForeignKey("PayerId")
                         .OnDelete(DeleteBehavior.Restrict)
