@@ -46,6 +46,7 @@ namespace picpay_challenge.Domain.Repositories
                 query = query.Where(user => user.Role == filter.Role);
             }
             query = query.Where(user => user.IsActive == filter.IsActive);
+            query = ApplyOrdering(query, filter);
 
             return query;
 
