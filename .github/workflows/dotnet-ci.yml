@@ -3,7 +3,7 @@
 on:
   push:
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
 
       - name: Restore dependencies
         run: dotnet restore ./picpay_challenge.sln
@@ -25,7 +25,7 @@ jobs:
         run: dotnet build ./picpay_challenge.sln --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test ./picpay_challenge.sln --no-build --verbosity normal
+        run: dotnet test ./Tests/picpay_challenge.sln --no-build --verbosity normal
 
       - name: Publish main project
         run: dotnet publish ./src/picpay_challenge/picpay_challenge.csproj -c Release -o ./publish
