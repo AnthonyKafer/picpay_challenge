@@ -25,10 +25,10 @@ jobs:
         run: dotnet build ./picpay_challenge.sln --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test ./Tests/picpay_challenge.sln --no-build --verbosity normal
+        run: dotnet test ./Tests/Tests.csproj --no-build --verbosity normal
 
       - name: Publish main project
-        run: dotnet publish ./src/picpay_challenge/picpay_challenge.csproj -c Release -o ./publish
+        run: dotnet publish ./picpay_challenge/picpay_challenge.csproj -c Release -o ./publish
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
