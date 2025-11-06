@@ -16,19 +16,19 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'  
+          dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ./picpay_challenge.sln
 
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
+      - name: Build solution
+        run: dotnet build ./picpay_challenge.sln --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test --no-build --verbosity normal
+      - name: Run tests
+        run: dotnet test ./picpay_challenge.sln --no-build --verbosity normal
 
-      - name: Publish
-        run: dotnet publish -c Release -o ./publish
+      - name: Publish main project
+        run: dotnet publish ./src/picpay_challenge/picpay_challenge.csproj -c Release -o ./publish
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
